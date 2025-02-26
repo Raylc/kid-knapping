@@ -10,41 +10,121 @@ core_level <- read.csv("data/lithic_data_by_core.csv", fileEncoding="UTF-8-BOM")
   
 # Approach 1: Single model
 
-# Convert to wide format for separate outcomes
-data_wide <- data %>% 
-  tidyr::pivot_wider(names_from = Tool, values_from = Score)
+# Data preparation
+ind_level0 <- ind_level %>%
+  select(Gender, Grip_Strength_kg, MRT_Percent_Correct, Fitts_movement_time_avg_ms,Participant_Number)
+df<- left_join(core_level, ind_level0, by = "Participant_Number")
+df_no_NA <- na.omit(df)
+df_no_NA <- df_no_NA %>%
+  mutate(
+    Participant_Number = factor(Participant_Number),
+    Core_ID = factor(Core_ID),
+    Condition = factor(Condition),
+    Gender = factor(Gender)
+  )
+df_no_NA <- df_no_NA %>% filter(Core_ID!="371")
 
-quality_model <- lmer(Quality ~ Condition + Gender + Personality + MotorAccuracy + 
-                        MentalRotation + GripStrength + scale(Day) + 
-                        (1 + scale(Day) | ID), 
-                      data = core_level)
+# Assuming your data frame is named 'df' with columns:
+# Core_ID, Participant, Quantity, condition, gender, day, 
+# Grip_Strength_kg, MRT_Percent_Correct, Fitts_movement_time_avg_ms
 
-# Multilevel model for Quality outcome (random intercept by ID)
-model_quality <- lmer(Quality ~ AgeGroup + Gender + Personality + MotorAccuracy + 
-                      MentalRotation + GripStrength + (1|ID), data = data_wide)
+# Handle missing data (example: multiple imputation)
+# You might need mice or other packages for proper handling
+# This is just a placeholder - actual implementation depends on your data
+df <- df %>%
+  mutate(across(c(Grip_Strength_kg, MRT_Percent_Correct, Fitts_movement_time_avg_ms), 
+                ~ifelse(is.na(.), mean(., na.rm = TRUE), .)))
 
-# Repeat for Quantity and Economy outcomes
-model_quantity <- lmer(Quantity ~ AgeGroup + Gender + Personality + MotorAccuracy + 
-                       MentalRotation + GripStrength + (1|ID), data = data_wide)
-model_economy <- lmer(Economy ~ AgeGroup + Gender + Personality + MotorAccuracy + 
-                      MentalRotation + GripStrength + (1|ID), data = data_wide)
+# Build multilevel model
+model1 <- lmer(Quantity ~ 
+                # Level 1 (core-level) predictors
+                Day + 
+                
+                # Level 2 (individual-level) predictors
+                Condition + Gender + Grip_Strength_kg + 
+                MRT_Percent_Correct + Fitts_movement_time_avg_ms +
+                
+                # Individual level Random effects (nested structure)
+                (1 | Participant_Number),
+              
+              data = df_no_NA)
 
-# View results
-summary(model_quality)
+# View model summary
+summary(model1)
 
+# Build multilevel model
+model2 <- lmer(Quality ~ 
+                 # Level 1 (core-level) predictors
+                 Day + 
+                 
+                 # Level 2 (individual-level) predictors
+                 Condition + Gender + Grip_Strength_kg + 
+                 MRT_Percent_Correct + Fitts_movement_time_avg_ms +
+                 
+                 # Individual level Random effects (nested structure)
+                 (1 | Participant_Number),
+               
+               data = df_no_NA)
+
+# View model summary
+summary(model2)
+
+# Build multilevel model
+model3 <- lmer(Economy ~ 
+                 # Level 1 (core-level) predictors
+                 Day + 
+                 
+                 # Level 2 (individual-level) predictors
+                 Condition + Gender + Grip_Strength_kg + 
+                 MRT_Percent_Correct + Fitts_movement_time_avg_ms +
+                 
+                 # Individual level Random effects (nested structure)
+                 (1 | Participant_Number),
+               
+               data = df_no_NA)
+
+# View model summary
+summary(model3)
 
 
 
 # Approach 2: Seperate model with AIC comparison
 # Model comparison for Quality outcome
-model1 <- lmer(Quality ~ AgeGroup + Gender + (1|ID), data = data_wide)
-model2 <- lmer(Quality ~ Personality + MotorAccuracy + (1|ID), data = data_wide)
-model3 <- lmer(Quality ~ MentalRotation + GripStrength + (1|ID), data = data_wide)
-model4 <- lmer(Quality ~ AgeGroup + MotorAccuracy + GripStrength + (1|ID), data = data_wide)
+modelquality1 <- lmer(Quality ~ Day + (1 | Participant_Number), data = df_no_NA)
+modelquality2 <- lmer(Quality ~ Condition + Gender + (1 | Participant_Number), data = df_no_NA)
+modelquality3 <- lmer(Quality ~ Grip_Strength_kg +  MRT_Percent_Correct + Fitts_movement_time_avg_ms + (1 | Participant_Number), data = df_no_NA)
 
 # Create comparison table
-aic_table <- AIC(model1, model2, model3, model4)
+aic_table <- AIC(model2,modelquality1, modelquality2, modelquality3)
 aic_table[order(aic_table$AIC), ]
+summary(modelquality1)
+summary(modelquality2)
+summary(modelquality3)
+
+# Model comparison for Quality outcome
+modelquantity1 <- lmer(Quantity ~ Day + (1 | Participant_Number), data = df_no_NA)
+modelquantity2 <- lmer(Quantity ~ Condition + Gender + (1 | Participant_Number), data = df_no_NA)
+modelquantity3 <- lmer(Quantity ~ Grip_Strength_kg +  MRT_Percent_Correct + Fitts_movement_time_avg_ms + (1 | Participant_Number), data = df_no_NA)
+
+# Create comparison table
+aic_table <- AIC(model1,modelquantity1, modelquantity2, modelquantity3)
+aic_table[order(aic_table$AIC), ]
+summary(modelquality1)
+summary(modelquality2)
+summary(modelquality3)
+
+# Model comparison for Quality outcome
+modelEconomy1 <- lmer(Economy ~ Day + (1 | Participant_Number), data = df_no_NA)
+modelEconomy2 <- lmer(Economy ~ Condition + Gender + (1 | Participant_Number), data = df_no_NA)
+modelEconomy3 <- lmer(Economy ~ Grip_Strength_kg +  MRT_Percent_Correct + Fitts_movement_time_avg_ms + (1 | Participant_Number), data = df_no_NA)
+
+# Create comparison table
+aic_table <- AIC(model3,modelEconomy1, modelEconomy2, modelEconomy3)
+aic_table[order(aic_table$AIC), ]
+summary(modelEconomy1)
+summary(modelEconomy2)
+summary(modelEconomy3)
+
 
 
 # Alternative comparison using MuMIn package
@@ -55,7 +135,14 @@ aic_table[order(aic_table$AIC), ]
 #                    REML = FALSE)
 # model_null <- lmer(Quality ~ 1 + (1|ID), data = data_wide, REML = FALSE)
 # model.sel(model_null, model1, model2, model3, model4, model_full)
-  
+
+
+
+
+
+
+
+#############################################################
 # Replication of SPSS visualization 
 ## fig 1 Change in average a) Quantity (PC1), b) Quality (PC2), and c) Economy (PC3) factor scores over training in children and adults. Error bars indicate 95% confidence intervals.
 summary_Quantity <- core_level %>%
