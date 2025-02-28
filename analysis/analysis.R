@@ -4,6 +4,8 @@ library(tidyverse)
 library(lmerTest)
 library(patchwork)
 library(ggpubr)
+library(glmulti)
+
 # import data
 ind_level <- read.csv("data/individual__data_by_participant.csv", fileEncoding="UTF-8-BOM")
 core_level <- read.csv("data/lithic_data_by_core.csv", fileEncoding="UTF-8-BOM")
@@ -12,7 +14,7 @@ core_level <- read.csv("data/lithic_data_by_core.csv", fileEncoding="UTF-8-BOM")
 
 # Data preparation
 ind_level0 <- ind_level %>%
-  select(Gender, Grip_Strength_kg, MRT_Percent_Correct, Fitts_movement_time_avg_ms,Participant_Number)
+  select(Gender, Grip_Strength_kg, MRT_Percent_Correct, Fitts_movement_time_avg_ms,Participant_Number,BFI_O,BFI_C,BFI_A,BFI_E,BFI_N)
 df<- left_join(core_level, ind_level0, by = "Participant_Number")
 df_no_NA <- na.omit(df)
 df_no_NA <- df_no_NA %>%
@@ -22,20 +24,97 @@ df_no_NA <- df_no_NA %>%
     Condition = factor(Condition),
     Gender = factor(Gender)
   )
-df_no_NA <- df_no_NA %>% filter(Core_ID!="371")
-
-# Assuming your data frame is named 'df' with columns:
-# Core_ID, Participant, Quantity, condition, gender, day, 
-# Grip_Strength_kg, MRT_Percent_Correct, Fitts_movement_time_avg_ms
 
 # Handle missing data (example: multiple imputation)
 # You might need mice or other packages for proper handling
 # This is just a placeholder - actual implementation depends on your data
-df <- df %>%
-  mutate(across(c(Grip_Strength_kg, MRT_Percent_Correct, Fitts_movement_time_avg_ms), 
-                ~ifelse(is.na(.), mean(., na.rm = TRUE), .)))
+# df <- df %>%
+#   mutate(across(c(Grip_Strength_kg, MRT_Percent_Correct, Fitts_movement_time_avg_ms), 
+#                 ~ifelse(is.na(.), mean(., na.rm = TRUE), .)))
 
 # Build multilevel model
+# 
+# quantity_complete<- lmer(Quantity ~   Day + 
+#                            # Level 2 (individual-level) predictors
+#                            Condition + Gender + Grip_Strength_kg + 
+#                            MRT_Percent_Correct + Fitts_movement_time_avg_ms +
+#                            BFI_O +  BFI_C + BFI_A + BFI_E + BFI_N+
+#                            # Individual level Random effects (nested structure)
+#                            (1 | Participant_Number),
+#                        data = df_no_NA,
+#                        REML = FALSE)
+# 
+quantity_complete <- lmer(Quantity ~ Day +
+                            # Level 2 (individual-level) predictors
+                            Condition + Gender + Grip_Strength_kg +
+                            MRT_Percent_Correct + Fitts_movement_time_avg_ms +
+                            BFI_O + BFI_C + BFI_A + BFI_E + BFI_N +
+                            # Random effects
+                            (1 | Participant_Number),
+                          data = df_no_NA,
+                          REML = FALSE)
+# rma.glmulti <- function(formula, data, ...)
+#   rma.mv(formula, vi, random = ~ 1 | Participant_Number, data=data, method="ML", ...)
+# #the multimodal selection
+# lmer_fit <- function(formula, data) {
+#   lmer(update(formula, ". ~ ."),  # Preserve random effects
+#        data = data, 
+#        REML = FALSE)
+# }
+# 
+# lmer_fit <- function(formula, data) {
+#   # Convert formula to character to manipulate it
+#   base_formula <- as.character(formula(quantity_complete)[2])  # Get right side of base formula
+#   random_part <- "(1 | Participant_Number)"  # Define random effect to keep
+#   
+#   # Get the new fixed effects from glmulti
+#   new_fixed <- as.character(formula)[2]
+#   
+#   # Combine new fixed effects with preserved random effect
+#   full_formula <- as.formula(paste("Quantity ~", new_fixed, "+", random_part))
+#   
+#   lmer(full_formula,
+#        data = data,
+#        REML = FALSE)
+# }
+# quantity_multi <- glmulti(formula = quantity_complete,data = df_no_NA, # use the model with built as a starting point
+#                           level = 2, #1=just look at main effects, 2=look at main and interraction effects
+#                           method="g", crit="aic", minsize = 0, maxsize = 7, fitfunc = rma.glmulti) 
+# quantity_multi <- glmulti(formula = quantity_complete, data = df_no_NA, # use the model with built as a starting point
+#                           level = 2, #1=just look at main effects, 2=look at main and interraction effects
+#                           method="g", crit="aic", minsize = 0, maxsize = 7, minK = 0, maxK = -1)
+
+lmer.glmulti <- function (formula, data, random, ...) {
+  lmer(paste(deparse(formula), random), data = data)
+}
+
+quantity_multi <- glmulti(y =Quantity ~ Day + 
+          # Level 2 (individual-level) predictors
+          Condition + Gender + Grip_Strength_kg + 
+          MRT_Percent_Correct + Fitts_movement_time_avg_ms +
+          BFI_O + BFI_C + BFI_A + BFI_E + BFI_N,
+        data = df_no_NA,
+        random = '+(1 | Participant_Number)',
+        level = 2,
+        method = 'g',
+        crit = 'aicc',
+        marginality = TRUE,
+        fitfunc = lmer.glmulti)
+
+
+
+
+
+
+summary(quantity_complete) #all models
+
+
+
+print(quantity_multi) #all models
+
+summary(quantity_multi@objects[[2]]) #best model
+
+
 model1 <- lmer(Quantity ~ 
                 # Level 1 (core-level) predictors
                 Day + 
@@ -52,6 +131,73 @@ model1 <- lmer(Quantity ~
 # View model summary
 summary(model1)
 
+###########################
+model1 <- lmer(Quantity ~ 
+                 # Level 1 (core-level) predictors
+                 Day + 
+                 
+                 # Level 2 (individual-level) predictors
+                 Condition + Gender + Grip_Strength_kg + 
+                 MRT_Percent_Correct + Fitts_movement_time_avg_ms +
+                 
+                 # Individual level Random effects (nested structure)
+                 (1 | Participant_Number) +Day*Condition*Gender,
+               
+               data = df_no_NA)
+
+# View model summary
+summary(model1)
+
+
+
+model1 <- lmer(Quantity ~ 
+                 # Level 1 (core-level) predictors
+                 Day + 
+                 
+                 # Level 2 (individual-level) predictors
+                 Condition + Gender + BFI_O +  BFI_C + BFI_A + BFI_E + BFI_N+
+                 
+                 # Individual level Random effects (nested structure)
+                 (1 | Participant_Number) +Day*Condition*Gender,
+               
+               data = df_no_NA)
+
+# View model summary
+summary(model1)
+
+
+
+model1 <- lmer(Quality ~ 
+                 # Level 1 (core-level) predictors
+                 Day + 
+                 
+                 # Level 2 (individual-level) predictors
+                 Condition + Gender + BFI_O +  BFI_C + BFI_A + BFI_E + BFI_N+
+                 
+                 # Individual level Random effects (nested structure)
+                 (1 | Participant_Number) +Day*Condition*Gender,
+               
+               data = df_no_NA)
+
+# View model summary
+summary(model1)
+
+
+model1 <- lmer(Economy ~ 
+                 # Level 1 (core-level) predictors
+                 Day + 
+                 
+                 # Level 2 (individual-level) predictors
+                 Condition + Gender + BFI_O +  BFI_C + BFI_A + BFI_E + BFI_N+
+                 
+                 # Individual level Random effects (nested structure)
+                 (1 | Participant_Number) +Day*Condition*Gender,
+               
+               data = df_no_NA)
+
+# View model summary
+summary(model1)
+##########################
 # Build multilevel model
 model2 <- lmer(Quality ~ 
                  # Level 1 (core-level) predictors
@@ -139,8 +285,41 @@ summary(modelEconomy3)
 
 
 
+modelb51 <- lmer(Quantity ~ 
+                 # BIG FIVE
+                 BFI_O +  BFI_C + BFI_A + BFI_E + BFI_N+
+                 
+                 # Individual level Random effects (nested structure)
+                 (1 | Participant_Number),
+               
+               data = df_no_NA)
 
+# View model summary
+summary(modelb51)
 
+modelb52 <- lmer(Quality ~ 
+                   # BIG FIVE
+                   BFI_O +  BFI_C + BFI_A + BFI_E + BFI_N+
+                   
+                   # Individual level Random effects (nested structure)
+                   (1 | Participant_Number),
+                 
+                 data = df_no_NA)
+
+# View model summary
+summary(modelb52)
+
+modelb53 <- lmer(Economy ~ 
+                   # BIG FIVE
+                   BFI_O +  BFI_C + BFI_A + BFI_E + BFI_N+
+                   
+                   # Individual level Random effects (nested structure)
+                   (1 | Participant_Number),
+                 
+                 data = df_no_NA)
+
+# View model summary
+summary(modelb53)
 
 #############################################################
 # Replication of SPSS visualization 
