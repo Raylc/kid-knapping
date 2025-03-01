@@ -92,27 +92,49 @@ quantity_multi <- glmulti(y =Quantity ~ Day +
           # Level 2 (individual-level) predictors
           Condition + Gender + Grip_Strength_kg + 
           MRT_Percent_Correct + Fitts_movement_time_avg_ms +
-          BFI_O + BFI_C + BFI_A + BFI_E + BFI_N,
+          BFI_O + BFI_C + BFI_A + BFI_E + BFI_N+
+          Condition*Gender*Day+Grip_Strength_kg*Condition*Gender+
+          MRT_Percent_Correct*Condition*Gender+Fitts_movement_time_avg_ms*Condition*Gender,
         data = df_no_NA,
         random = '+(1 | Participant_Number)',
-        level = 2,
-        method = 'g',
+        level = 1,
+        method = 'h',
         crit = 'aicc',
         marginality = TRUE,
         fitfunc = lmer.glmulti)
 
+quality_multi <- glmulti(y =Quality ~ Day + 
+                            # Level 2 (individual-level) predictors
+                            Condition + Gender + Grip_Strength_kg + 
+                            MRT_Percent_Correct + Fitts_movement_time_avg_ms +
+                            BFI_O + BFI_C + BFI_A + BFI_E + BFI_N,
+                          data = df_no_NA,
+                          random = '+(1 | Participant_Number)',
+                          level = 1,
+                          method = 'h',
+                          crit = 'aicc',
+                          marginality = TRUE,
+                          fitfunc = lmer.glmulti)
 
-
-
-
-
-summary(quantity_complete) #all models
-
-
+economy_multi <- glmulti(y =Economy ~ Day + 
+                           # Level 2 (individual-level) predictors
+                           Condition + Gender + Grip_Strength_kg + 
+                           MRT_Percent_Correct + Fitts_movement_time_avg_ms +
+                           BFI_O + BFI_C + BFI_A + BFI_E + BFI_N,
+                         data = df_no_NA,
+                         random = '+(1 | Participant_Number)',
+                         level = 1,
+                         method = 'h',
+                         crit = 'aicc',
+                         marginality = TRUE,
+                         fitfunc = lmer.glmulti)
 
 print(quantity_multi) #all models
-
-summary(quantity_multi@objects[[2]]) #best model
+print(quality_multi) #all models
+print(economy_multi)
+summary(quantity_multi@objects[[1]]) #best model
+summary(quality_multi@objects[[1]]) #best model
+summary(economy_multi@objects[[1]]) #best model
 
 
 model1 <- lmer(Quantity ~ 
