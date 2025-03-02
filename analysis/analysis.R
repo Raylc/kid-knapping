@@ -10,7 +10,6 @@ library(glmulti)
 ind_level <- read.csv("data/individual__data_by_participant.csv", fileEncoding="UTF-8-BOM")
 core_level <- read.csv("data/lithic_data_by_core.csv", fileEncoding="UTF-8-BOM")
   
-# Approach 1: Single model
 
 # Data preparation
 ind_level0 <- ind_level %>%
@@ -25,65 +24,8 @@ df_no_NA <- df_no_NA %>%
     Gender = factor(Gender)
   )
 
-# Handle missing data (example: multiple imputation)
-# You might need mice or other packages for proper handling
-# This is just a placeholder - actual implementation depends on your data
-# df <- df %>%
-#   mutate(across(c(Grip_Strength_kg, MRT_Percent_Correct, Fitts_movement_time_avg_ms), 
-#                 ~ifelse(is.na(.), mean(., na.rm = TRUE), .)))
-
-# Build multilevel model
-# 
-# quantity_complete<- lmer(Quantity ~   Day + 
-#                            # Level 2 (individual-level) predictors
-#                            Condition + Gender + Grip_Strength_kg + 
-#                            MRT_Percent_Correct + Fitts_movement_time_avg_ms +
-#                            BFI_O +  BFI_C + BFI_A + BFI_E + BFI_N+
-#                            # Individual level Random effects (nested structure)
-#                            (1 | Participant_Number),
-#                        data = df_no_NA,
-#                        REML = FALSE)
-# 
-quantity_complete <- lmer(Quantity ~ Day +
-                            # Level 2 (individual-level) predictors
-                            Condition + Gender + Grip_Strength_kg +
-                            MRT_Percent_Correct + Fitts_movement_time_avg_ms +
-                            BFI_O + BFI_C + BFI_A + BFI_E + BFI_N +
-                            # Random effects
-                            (1 | Participant_Number),
-                          data = df_no_NA,
-                          REML = FALSE)
-# rma.glmulti <- function(formula, data, ...)
-#   rma.mv(formula, vi, random = ~ 1 | Participant_Number, data=data, method="ML", ...)
-# #the multimodal selection
-# lmer_fit <- function(formula, data) {
-#   lmer(update(formula, ". ~ ."),  # Preserve random effects
-#        data = data, 
-#        REML = FALSE)
-# }
-# 
-# lmer_fit <- function(formula, data) {
-#   # Convert formula to character to manipulate it
-#   base_formula <- as.character(formula(quantity_complete)[2])  # Get right side of base formula
-#   random_part <- "(1 | Participant_Number)"  # Define random effect to keep
-#   
-#   # Get the new fixed effects from glmulti
-#   new_fixed <- as.character(formula)[2]
-#   
-#   # Combine new fixed effects with preserved random effect
-#   full_formula <- as.formula(paste("Quantity ~", new_fixed, "+", random_part))
-#   
-#   lmer(full_formula,
-#        data = data,
-#        REML = FALSE)
-# }
-# quantity_multi <- glmulti(formula = quantity_complete,data = df_no_NA, # use the model with built as a starting point
-#                           level = 2, #1=just look at main effects, 2=look at main and interraction effects
-#                           method="g", crit="aic", minsize = 0, maxsize = 7, fitfunc = rma.glmulti) 
-# quantity_multi <- glmulti(formula = quantity_complete, data = df_no_NA, # use the model with built as a starting point
-#                           level = 2, #1=just look at main effects, 2=look at main and interraction effects
-#                           method="g", crit="aic", minsize = 0, maxsize = 7, minK = 0, maxK = -1)
-
+# Approach 1: AICC-based model selection
+## main effect only
 lmer.glmulti <- function (formula, data, random, ...) {
   lmer(paste(deparse(formula), random), data = data)
 }
@@ -128,13 +70,137 @@ economy_multi <- glmulti(y =Economy ~ Day +
                          crit = 'aicc',
                          marginality = TRUE,
                          fitfunc = lmer.glmulti)
+saveRDS(quantity_multi, "data/quantity_multi.rds")
+saveRDS(quality_multi, "data/quality_multi.rds")
+saveRDS(economy_multi, "data/economy_multi.rds")
 
 print(quantity_multi) #all models
 print(quality_multi) #all models
 print(economy_multi)
-summary(quantity_multi@objects[[1]]) #best model
-summary(quality_multi@objects[[1]]) #best model
-summary(economy_multi@objects[[1]]) #best model
+summary(quantity_multi@objects[[1]]) #quantity #1 model
+summary(quantity_multi@objects[[2]]) #quantity #2 model
+summary(quantity_multi@objects[[3]]) #quantity #3 model
+summary(quantity_multi@objects[[4]]) #quantity #4 model
+
+summary(quality_multi@objects[[1]]) #quality #1 model
+summary(quality_multi@objects[[2]]) #quality #2 model
+summary(quality_multi@objects[[3]]) #quality #3 model
+
+summary(economy_multi@objects[[1]]) #economy #1 model
+summary(economy_multi@objects[[2]]) #economy #2 model
+summary(economy_multi@objects[[3]]) #economy #3 model
+summary(economy_multi@objects[[4]]) #economy #4 model
+summary(economy_multi@objects[[5]]) #economy #5 model
+
+## interaction effect excluding big five
+
+quantity_int <- glmulti(y =Quantity ~ Day + 
+                            # Level 2 (individual-level) predictors
+                            Condition + Gender + Grip_Strength_kg + 
+                            MRT_Percent_Correct + Fitts_movement_time_avg_ms,
+                          data = df_no_NA,
+                          random = '+(1 | Participant_Number)',
+                          level = 2,
+                          method = 'h',
+                          crit = 'aicc',
+                          marginality = TRUE,
+                          fitfunc = lmer.glmulti)
+saveRDS(quantity_int, "data/quantity_int.rds")
+
+quality_int <- glmulti(y =Quality ~ Day + 
+                           # Level 2 (individual-level) predictors
+                           Condition + Gender + Grip_Strength_kg + 
+                           MRT_Percent_Correct + Fitts_movement_time_avg_ms,
+                         data = df_no_NA,
+                         random = '+(1 | Participant_Number)',
+                         level = 2,
+                         method = 'h',
+                         crit = 'aicc',
+                         marginality = TRUE,
+                         fitfunc = lmer.glmulti)
+saveRDS(quality_int, "data/quality_int.rds")
+
+economy_int <- glmulti(y =Economy ~ Day + 
+                           # Level 2 (individual-level) predictors
+                           Condition + Gender + Grip_Strength_kg + 
+                           MRT_Percent_Correct + Fitts_movement_time_avg_ms,
+                         data = df_no_NA,
+                         random = '+(1 | Participant_Number)',
+                         level = 1,
+                         method = 'h',
+                         crit = 'aicc',
+                         marginality = TRUE,
+                         fitfunc = lmer.glmulti)
+saveRDS(economy_int, "data/economy_int.rds")
+
+print(quantity_int) #all models
+print(quality_int) #all models
+print(economy_int)
+summary(quantity_int@objects[[1]]) #quantity #1 model
+summary(quantity_int@objects[[2]]) #quantity #2 model
+
+
+summary(quality_int@objects[[1]]) #quality #1 model
+summary(quality_int@objects[[2]]) #quality #2 model
+summary(quality_int@objects[[3]]) #quality #3 model
+summary(quality_int@objects[[4]]) #quality #4 model
+
+summary(economy_int@objects[[1]]) #economy #1 model
+summary(economy_int@objects[[2]]) #economy #2 model
+summary(economy_int@objects[[3]]) #economy #3 model
+
+#########three-way interaction terms added##########
+
+quantity_complete <- lmer(Quantity ~ Day +
+                            # Level 2 (individual-level) predictors
+                            Condition + Gender + Grip_Strength_kg +
+                            MRT_Percent_Correct + Fitts_movement_time_avg_ms +
+                            BFI_O + BFI_C + BFI_A + BFI_E + BFI_N +
+                            # Three-way interaction effect terms
+                            Condition*Gender*Day+
+                            Condition*Gender*Grip_Strength_kg+
+                            Condition*Gender*MRT_Percent_Correct +
+                            Condition*Gender*Fitts_movement_time_avg_ms +
+                            # Random effects
+                            (1 | Participant_Number),
+                          data = df_no_NA)
+
+summary(quantity_complete)
+
+
+quality_complete <- lmer(Quality ~ Day +
+                            # Level 2 (individual-level) predictors
+                            Condition + Gender + Grip_Strength_kg +
+                            MRT_Percent_Correct + Fitts_movement_time_avg_ms +
+                            BFI_O + BFI_C + BFI_A + BFI_E + BFI_N +
+                            # Three-way interaction effect terms
+                            Condition*Gender*Day+
+                            Condition*Gender*Grip_Strength_kg+
+                            Condition*Gender*MRT_Percent_Correct +
+                            Condition*Gender*Fitts_movement_time_avg_ms +
+                            # Random effects
+                            (1 | Participant_Number),
+                          data = df_no_NA)
+
+summary(quality_complete)
+
+economy_complete <- lmer(Economy ~ Day +
+                            # Level 2 (individual-level) predictors
+                            Condition + Gender + Grip_Strength_kg +
+                            MRT_Percent_Correct + Fitts_movement_time_avg_ms +
+                            BFI_O + BFI_C + BFI_A + BFI_E + BFI_N +
+                            # Three-way interaction effect terms
+                            Condition*Gender*Day+
+                            Condition*Gender*Grip_Strength_kg+
+                            Condition*Gender*MRT_Percent_Correct +
+                            Condition*Gender*Fitts_movement_time_avg_ms +
+                            # Random effects
+                            (1 | Participant_Number),
+                          data = df_no_NA)
+
+summary(economy_complete)
+
+
 
 
 model1 <- lmer(Quantity ~ 
