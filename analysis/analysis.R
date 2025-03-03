@@ -13,7 +13,7 @@ core_level <- read.csv("data/lithic_data_by_core.csv", fileEncoding="UTF-8-BOM")
 
 # Data preparation
 ind_level0 <- ind_level %>%
-  select(Gender, Grip_Strength_kg, MRT_Percent_Correct, Fitts_movement_time_avg_ms,Participant_Number,BFI_O,BFI_C,BFI_A,BFI_E,BFI_N)
+  select(Age.in.years,Gender, Grip_Strength_kg, MRT_Percent_Correct, Fitts_movement_time_avg_ms,Participant_Number,BFI_O,BFI_C,BFI_A,BFI_E,BFI_N)
 df<- left_join(core_level, ind_level0, by = "Participant_Number")
 df_no_NA <- na.omit(df)
 df_no_NA <- df_no_NA %>%
@@ -24,212 +24,14 @@ df_no_NA <- df_no_NA %>%
     Gender = factor(Gender)
   )
 
-# Approach 1: AICC-based model selection
-## main effect only
-lmer.glmulti <- function (formula, data, random, ...) {
-  lmer(paste(deparse(formula), random), data = data)
-}
-
-quantity_multi <- glmulti(y =Quantity ~ Day + 
-          # Level 2 (individual-level) predictors
-          Condition + Gender + Grip_Strength_kg + 
-          MRT_Percent_Correct + Fitts_movement_time_avg_ms +
-          BFI_O + BFI_C + BFI_A + BFI_E + BFI_N+
-          Condition*Gender*Day+Grip_Strength_kg*Condition*Gender+
-          MRT_Percent_Correct*Condition*Gender+Fitts_movement_time_avg_ms*Condition*Gender,
-        data = df_no_NA,
-        random = '+(1 | Participant_Number)',
-        level = 1,
-        method = 'h',
-        crit = 'aicc',
-        marginality = TRUE,
-        fitfunc = lmer.glmulti)
-
-quality_multi <- glmulti(y =Quality ~ Day + 
-                            # Level 2 (individual-level) predictors
-                            Condition + Gender + Grip_Strength_kg + 
-                            MRT_Percent_Correct + Fitts_movement_time_avg_ms +
-                            BFI_O + BFI_C + BFI_A + BFI_E + BFI_N,
-                          data = df_no_NA,
-                          random = '+(1 | Participant_Number)',
-                          level = 1,
-                          method = 'h',
-                          crit = 'aicc',
-                          marginality = TRUE,
-                          fitfunc = lmer.glmulti)
-
-economy_multi <- glmulti(y =Economy ~ Day + 
-                           # Level 2 (individual-level) predictors
-                           Condition + Gender + Grip_Strength_kg + 
-                           MRT_Percent_Correct + Fitts_movement_time_avg_ms +
-                           BFI_O + BFI_C + BFI_A + BFI_E + BFI_N,
-                         data = df_no_NA,
-                         random = '+(1 | Participant_Number)',
-                         level = 1,
-                         method = 'h',
-                         crit = 'aicc',
-                         marginality = TRUE,
-                         fitfunc = lmer.glmulti)
-saveRDS(quantity_multi, "data/quantity_multi.rds")
-saveRDS(quality_multi, "data/quality_multi.rds")
-saveRDS(economy_multi, "data/economy_multi.rds")
-
-print(quantity_multi) #all models
-print(quality_multi) #all models
-print(economy_multi)
-summary(quantity_multi@objects[[1]]) #quantity #1 model
-summary(quantity_multi@objects[[2]]) #quantity #2 model
-summary(quantity_multi@objects[[3]]) #quantity #3 model
-summary(quantity_multi@objects[[4]]) #quantity #4 model
-
-summary(quality_multi@objects[[1]]) #quality #1 model
-summary(quality_multi@objects[[2]]) #quality #2 model
-summary(quality_multi@objects[[3]]) #quality #3 model
-
-summary(economy_multi@objects[[1]]) #economy #1 model
-summary(economy_multi@objects[[2]]) #economy #2 model
-summary(economy_multi@objects[[3]]) #economy #3 model
-summary(economy_multi@objects[[4]]) #economy #4 model
-summary(economy_multi@objects[[5]]) #economy #5 model
-
-## interaction effect excluding big five
-
-quantity_int <- glmulti(y =Quantity ~ Day + 
-                            # Level 2 (individual-level) predictors
-                            Condition + Gender + Grip_Strength_kg + 
-                            MRT_Percent_Correct + Fitts_movement_time_avg_ms,
-                          data = df_no_NA,
-                          random = '+(1 | Participant_Number)',
-                          level = 2,
-                          method = 'h',
-                          crit = 'aicc',
-                          marginality = TRUE,
-                          fitfunc = lmer.glmulti)
-saveRDS(quantity_int, "data/quantity_int.rds")
-
-quality_int <- glmulti(y =Quality ~ Day + 
-                           # Level 2 (individual-level) predictors
-                           Condition + Gender + Grip_Strength_kg + 
-                           MRT_Percent_Correct + Fitts_movement_time_avg_ms,
-                         data = df_no_NA,
-                         random = '+(1 | Participant_Number)',
-                         level = 2,
-                         method = 'h',
-                         crit = 'aicc',
-                         marginality = TRUE,
-                         fitfunc = lmer.glmulti)
-saveRDS(quality_int, "data/quality_int.rds")
-
-economy_int <- glmulti(y =Economy ~ Day + 
-                           # Level 2 (individual-level) predictors
-                           Condition + Gender + Grip_Strength_kg + 
-                           MRT_Percent_Correct + Fitts_movement_time_avg_ms,
-                         data = df_no_NA,
-                         random = '+(1 | Participant_Number)',
-                         level = 1,
-                         method = 'h',
-                         crit = 'aicc',
-                         marginality = TRUE,
-                         fitfunc = lmer.glmulti)
-saveRDS(economy_int, "data/economy_int.rds")
-
-print(quantity_int) #all models
-print(quality_int) #all models
-print(economy_int)
-summary(quantity_int@objects[[1]]) #quantity #1 model
-summary(quantity_int@objects[[2]]) #quantity #2 model
-
-
-summary(quality_int@objects[[1]]) #quality #1 model
-summary(quality_int@objects[[2]]) #quality #2 model
-summary(quality_int@objects[[3]]) #quality #3 model
-summary(quality_int@objects[[4]]) #quality #4 model
-
-summary(economy_int@objects[[1]]) #economy #1 model
-summary(economy_int@objects[[2]]) #economy #2 model
-summary(economy_int@objects[[3]]) #economy #3 model
-
-#########three-way interaction terms added##########
-
-quantity_complete <- lmer(Quantity ~ Day +
-                            # Level 2 (individual-level) predictors
-                            Condition + Gender + Grip_Strength_kg +
-                            MRT_Percent_Correct + Fitts_movement_time_avg_ms +
-                            BFI_O + BFI_C + BFI_A + BFI_E + BFI_N +
-                            # Three-way interaction effect terms
-                            Condition*Gender*Day+
-                            Condition*Gender*Grip_Strength_kg+
-                            Condition*Gender*MRT_Percent_Correct +
-                            Condition*Gender*Fitts_movement_time_avg_ms +
-                            # Random effects
-                            (1 | Participant_Number),
-                          data = df_no_NA)
-
-summary(quantity_complete)
-
-
-quality_complete <- lmer(Quality ~ Day +
-                            # Level 2 (individual-level) predictors
-                            Condition + Gender + Grip_Strength_kg +
-                            MRT_Percent_Correct + Fitts_movement_time_avg_ms +
-                            BFI_O + BFI_C + BFI_A + BFI_E + BFI_N +
-                            # Three-way interaction effect terms
-                            Condition*Gender*Day+
-                            Condition*Gender*Grip_Strength_kg+
-                            Condition*Gender*MRT_Percent_Correct +
-                            Condition*Gender*Fitts_movement_time_avg_ms +
-                            # Random effects
-                            (1 | Participant_Number),
-                          data = df_no_NA)
-
-summary(quality_complete)
-
-economy_complete <- lmer(Economy ~ Day +
-                            # Level 2 (individual-level) predictors
-                            Condition + Gender + Grip_Strength_kg +
-                            MRT_Percent_Correct + Fitts_movement_time_avg_ms +
-                            BFI_O + BFI_C + BFI_A + BFI_E + BFI_N +
-                            # Three-way interaction effect terms
-                            Condition*Gender*Day+
-                            Condition*Gender*Grip_Strength_kg+
-                            Condition*Gender*MRT_Percent_Correct +
-                            Condition*Gender*Fitts_movement_time_avg_ms +
-                            # Random effects
-                            (1 | Participant_Number),
-                          data = df_no_NA)
-
-summary(economy_complete)
-
-
-
-
-model1 <- lmer(Quantity ~ 
-                # Level 1 (core-level) predictors
-                Day + 
-                
-                # Level 2 (individual-level) predictors
-                Condition + Gender + Grip_Strength_kg + 
-                MRT_Percent_Correct + Fitts_movement_time_avg_ms +
-                
-                # Individual level Random effects (nested structure)
-                (1 | Participant_Number),
-              
-              data = df_no_NA)
-
-# View model summary
-summary(model1)
-
-###########################
+#######RQ1 Determine if there are age/gender group-level difference and if training affect the performance.
 model1 <- lmer(Quantity ~ 
                  # Level 1 (core-level) predictors
                  Day + 
-                 
                  # Level 2 (individual-level) predictors
-                 Condition + Gender + Grip_Strength_kg + 
-                 MRT_Percent_Correct + Fitts_movement_time_avg_ms +
-                 
+                 Condition + Gender + Day*Condition*Gender +
                  # Individual level Random effects (nested structure)
-                 (1 | Participant_Number) +Day*Condition*Gender,
+                 (1 | Participant_Number),
                
                data = df_no_NA)
 
@@ -238,63 +40,11 @@ summary(model1)
 
 
 
-model1 <- lmer(Quantity ~ 
-                 # Level 1 (core-level) predictors
-                 Day + 
-                 
-                 # Level 2 (individual-level) predictors
-                 Condition + Gender + BFI_O +  BFI_C + BFI_A + BFI_E + BFI_N+
-                 
-                 # Individual level Random effects (nested structure)
-                 (1 | Participant_Number) +Day*Condition*Gender,
-               
-               data = df_no_NA)
-
-# View model summary
-summary(model1)
-
-
-
-model1 <- lmer(Quality ~ 
-                 # Level 1 (core-level) predictors
-                 Day + 
-                 
-                 # Level 2 (individual-level) predictors
-                 Condition + Gender + BFI_O +  BFI_C + BFI_A + BFI_E + BFI_N+
-                 
-                 # Individual level Random effects (nested structure)
-                 (1 | Participant_Number) +Day*Condition*Gender,
-               
-               data = df_no_NA)
-
-# View model summary
-summary(model1)
-
-
-model1 <- lmer(Economy ~ 
-                 # Level 1 (core-level) predictors
-                 Day + 
-                 
-                 # Level 2 (individual-level) predictors
-                 Condition + Gender + BFI_O +  BFI_C + BFI_A + BFI_E + BFI_N+
-                 
-                 # Individual level Random effects (nested structure)
-                 (1 | Participant_Number) +Day*Condition*Gender,
-               
-               data = df_no_NA)
-
-# View model summary
-summary(model1)
-##########################
-# Build multilevel model
 model2 <- lmer(Quality ~ 
                  # Level 1 (core-level) predictors
                  Day + 
-                 
                  # Level 2 (individual-level) predictors
-                 Condition + Gender + Grip_Strength_kg + 
-                 MRT_Percent_Correct + Fitts_movement_time_avg_ms +
-                 
+                 Condition + Gender + Day*Condition*Gender +
                  # Individual level Random effects (nested structure)
                  (1 | Participant_Number),
                
@@ -303,15 +53,13 @@ model2 <- lmer(Quality ~
 # View model summary
 summary(model2)
 
-# Build multilevel model
+
+
 model3 <- lmer(Economy ~ 
                  # Level 1 (core-level) predictors
                  Day + 
-                 
                  # Level 2 (individual-level) predictors
-                 Condition + Gender + Grip_Strength_kg + 
-                 MRT_Percent_Correct + Fitts_movement_time_avg_ms +
-                 
+                 Condition + Gender + Day*Condition*Gender +
                  # Individual level Random effects (nested structure)
                  (1 | Participant_Number),
                
@@ -321,98 +69,707 @@ model3 <- lmer(Economy ~
 summary(model3)
 
 
+#######RQ2 How do different motor-cognitive traits predict the learning processes?
+# # Group by participant and check if they have all 5 days
+# complete_attendance <- df_no_NA %>%
+#   group_by(Participant_Number) %>%
+#   summarise(days_attended = n_distinct(Day)) %>%
+#   filter(days_attended < 5)
+# 
+# # Print participants who missed at least one day
+# print(complete_attendance)
+# 
+# df_no_NA_ct<-df_no_NA  %>%  filter(Participant_Number!=12 & Participant_Number!=27)
+# 
+# # Calculate separate averages for Quality, Quantity, and Economy
+# result <- df_no_NA_ct %>%
+#   group_by(Participant_Number, Day) %>%
+#   summarise(
+#     Avg_Quality = mean(Quality, na.rm = TRUE),
+#     Avg_Quantity = mean(Quantity, na.rm = TRUE),
+#     Avg_Economy = mean(Economy, na.rm = TRUE)
+#   ) %>%
+#   ungroup()
+# 
+# 
+# # Filter for Day 1 and Day 5, then calculate differences
+# diff_df <- result %>%
+#   filter(Day %in% c(1, 5)) %>%  # Keep only Day 1 and Day 5
+#   group_by(Participant_Number) %>%
+#   summarise(
+#     Diff_Quality = Avg_Quality[Day == 5] - Avg_Quality[Day == 1],
+#     Diff_Quantity = Avg_Quantity[Day == 5] - Avg_Quantity[Day == 1],
+#     Diff_Economy = Avg_Economy[Day == 5] - Avg_Economy[Day == 1]
+#   ) %>%
+#   ungroup()
+# 
+# 
+# df_no_NA_ct0 <- df_no_NA_ct %>%
+#   select(Condition,Gender, Grip_Strength_kg, MRT_Percent_Correct, Fitts_movement_time_avg_ms,Participant_Number,BFI_O,BFI_C,BFI_A,BFI_E,BFI_N)
+# df_learning<- left_join(diff_df, df_no_NA_ct0, by = "Participant_Number")
+# df_learning <- df_learning %>%
+#   distinct(Diff_Quality, Diff_Quantity, Diff_Economy, .keep_all = TRUE)
+# 
+# 
+# model1_delta <- lm(Diff_Quantity ~ 
+#                      Grip_Strength_kg + 
+#                      MRT_Percent_Correct + Fitts_movement_time_avg_ms +
+#                      BFI_O + BFI_C + BFI_A + BFI_E + BFI_N,
+#                    
+#                    data = df_learning)
+# 
+# # View model summary
+# summary(model1_delta)
+# 
+# 
+# model2_delta <- lm(Diff_Quality ~ 
+#                  Grip_Strength_kg + 
+#                  MRT_Percent_Correct + Fitts_movement_time_avg_ms +
+#                    BFI_O + BFI_C + BFI_A + BFI_E + BFI_N,
+#                
+#                data = df_learning)
+# 
+# # View model summary
+# summary(model2_delta)
+# 
+# 
+# model3_delta <- lm(Diff_Economy ~ 
+#                      Grip_Strength_kg + 
+#                      MRT_Percent_Correct + Fitts_movement_time_avg_ms +
+#                      BFI_O + BFI_C + BFI_A + BFI_E + BFI_N,
+#                    
+#                    data = df_learning)
+# 
+# # View model summary
+# summary(model3_delta)
+# 
+# 
+# 
+# 
+# # Calculate separate averages for Quality, Quantity, and Economy
+# result1 <- df_no_NA_ct %>%
+#   group_by(Participant_Number) %>%
+#   summarise(
+#     Avg_Quality = mean(Quality, na.rm = TRUE),
+#     Avg_Quantity = mean(Quantity, na.rm = TRUE),
+#     Avg_Economy = mean(Economy, na.rm = TRUE)
+#   ) %>%
+#   ungroup()
+# df_average<- left_join(result1, df_no_NA_ct0, by = "Participant_Number")
+# df_average <- df_average %>%
+#   distinct(Avg_Quality, Avg_Quantity, Avg_Economy, .keep_all = TRUE)
+# 
+# 
+# df_average_child <- df_average %>% filter(Condition=="Child")
+# 
+# model1_average <- lm(Avg_Quantity ~ 
+#                      Grip_Strength_kg + 
+#                      MRT_Percent_Correct + Fitts_movement_time_avg_ms +
+#                      BFI_O + BFI_C + BFI_A + BFI_E + BFI_N,
+#                    
+#                    data = df_average_child)
+# 
+# # View model summary
+# summary(model1_average)
+# 
+# 
+# model2_average <- lm(Avg_Quality ~ 
+#                      Grip_Strength_kg + 
+#                      MRT_Percent_Correct + Fitts_movement_time_avg_ms +
+#                      BFI_O + BFI_C + BFI_A + BFI_E + BFI_N,
+#                    
+#                    data = df_average)
+# 
+# # View model summary
+# summary(model2_average)
+# 
+# 
+# model3_average <- lm(Avg_Economy ~ 
+#                      Grip_Strength_kg + 
+#                      MRT_Percent_Correct + Fitts_movement_time_avg_ms +
+#                      BFI_O + BFI_C + BFI_A + BFI_E + BFI_N,
+#                    
+#                    data = df_average)
+# 
+# # View model summary
+# summary(model3_average)
+# 
+# df_no_NA_child <- df_no_NA %>% filter(Condition=="Child")
+# 
+# 
 
-# Approach 2: Seperate model with AIC comparison
-# Model comparison for Quality outcome
-modelquality1 <- lmer(Quality ~ Day + (1 | Participant_Number), data = df_no_NA)
-modelquality2 <- lmer(Quality ~ Condition + Gender + (1 | Participant_Number), data = df_no_NA)
-modelquality3 <- lmer(Quality ~ Grip_Strength_kg +  MRT_Percent_Correct + Fitts_movement_time_avg_ms + (1 | Participant_Number), data = df_no_NA)
-
-# Create comparison table
-aic_table <- AIC(model2,modelquality1, modelquality2, modelquality3)
-aic_table[order(aic_table$AIC), ]
-summary(modelquality1)
-summary(modelquality2)
-summary(modelquality3)
-
-# Model comparison for Quality outcome
-modelquantity1 <- lmer(Quantity ~ Day + (1 | Participant_Number), data = df_no_NA)
-modelquantity2 <- lmer(Quantity ~ Condition + Gender + (1 | Participant_Number), data = df_no_NA)
-modelquantity3 <- lmer(Quantity ~ Grip_Strength_kg +  MRT_Percent_Correct + Fitts_movement_time_avg_ms + (1 | Participant_Number), data = df_no_NA)
-
-# Create comparison table
-aic_table <- AIC(model1,modelquantity1, modelquantity2, modelquantity3)
-aic_table[order(aic_table$AIC), ]
-summary(modelquality1)
-summary(modelquality2)
-summary(modelquality3)
-
-# Model comparison for Quality outcome
-modelEconomy1 <- lmer(Economy ~ Day + (1 | Participant_Number), data = df_no_NA)
-modelEconomy2 <- lmer(Economy ~ Condition + Gender + (1 | Participant_Number), data = df_no_NA)
-modelEconomy3 <- lmer(Economy ~ Grip_Strength_kg +  MRT_Percent_Correct + Fitts_movement_time_avg_ms + (1 | Participant_Number), data = df_no_NA)
-
-# Create comparison table
-aic_table <- AIC(model3,modelEconomy1, modelEconomy2, modelEconomy3)
-aic_table[order(aic_table$AIC), ]
-summary(modelEconomy1)
-summary(modelEconomy2)
-summary(modelEconomy3)
-
-
-
-# Alternative comparison using MuMIn package
-# install.packages("MuMIn")
-# library(MuMIn)
-# model_full <- lmer(Quality ~ AgeGroup + Gender + Personality + MotorAccuracy + 
-#                      MentalRotation + GripStrength + (1|ID), data = data_wide,
-#                    REML = FALSE)
-# model_null <- lmer(Quality ~ 1 + (1|ID), data = data_wide, REML = FALSE)
-# model.sel(model_null, model1, model2, model3, model4, model_full)
-
-
-
-
-modelb51 <- lmer(Quantity ~ 
-                 # BIG FIVE
-                 BFI_O +  BFI_C + BFI_A + BFI_E + BFI_N+
-                 
+model100 <- lmer(Quantity ~ 
+                  Grip_Strength_kg + 
+                 MRT_Percent_Correct + Fitts_movement_time_avg_ms +
                  # Individual level Random effects (nested structure)
                  (1 | Participant_Number),
                
                data = df_no_NA)
 
 # View model summary
-summary(modelb51)
+summary(model100)
 
-modelb52 <- lmer(Quality ~ 
-                   # BIG FIVE
-                   BFI_O +  BFI_C + BFI_A + BFI_E + BFI_N+
-                   
+model101 <- lmer(Quantity ~ 
+                   BFI_O + BFI_C + BFI_A + BFI_E + BFI_N+
                    # Individual level Random effects (nested structure)
                    (1 | Participant_Number),
                  
                  data = df_no_NA)
 
 # View model summary
-summary(modelb52)
+summary(model101)
 
-modelb53 <- lmer(Economy ~ 
-                   # BIG FIVE
-                   BFI_O +  BFI_C + BFI_A + BFI_E + BFI_N+
-                   
+model200 <- lmer(Quality ~ 
+                   Grip_Strength_kg + 
+                   MRT_Percent_Correct + Fitts_movement_time_avg_ms +
                    # Individual level Random effects (nested structure)
                    (1 | Participant_Number),
                  
                  data = df_no_NA)
 
 # View model summary
-summary(modelb53)
+summary(model200)
+
+model201 <- lmer(Quality ~ 
+                   BFI_O + BFI_C + BFI_A + BFI_E + BFI_N+
+                   # Individual level Random effects (nested structure)
+                   (1 | Participant_Number),
+                 
+                 data = df_no_NA)
+
+# View model summary
+summary(model201)
+
+model300 <- lmer(Economy ~ 
+                   Grip_Strength_kg + 
+                   MRT_Percent_Correct + Fitts_movement_time_avg_ms +
+                   # Individual level Random effects (nested structure)
+                   (1 | Participant_Number),
+                 
+                 data = df_no_NA)
+
+# View model summary
+summary(model300)
+
+model301 <- lmer(Economy ~ 
+                   BFI_O + BFI_C + BFI_A + BFI_E + BFI_N+
+                   # Individual level Random effects (nested structure)
+                   (1 | Participant_Number),
+                 
+                 data = df_no_NA)
+
+# View model summary
+summary(model301)
+
+# ##########children##############
+# 
+# 
+# model100 <- lmer(Quantity ~ 
+#                    Grip_Strength_kg + 
+#                    MRT_Percent_Correct + Fitts_movement_time_avg_ms +
+#                    # Individual level Random effects (nested structure)
+#                    (1 | Participant_Number),
+#                  
+#                  data = df_no_NA_child )
+# 
+# # View model summary
+# summary(model100)
+# 
+# model101 <- lmer(Quantity ~ 
+#                    BFI_O + BFI_C + BFI_A + BFI_E + BFI_N+
+#                    # Individual level Random effects (nested structure)
+#                    (1 | Participant_Number),
+#                  
+#                  data = df_no_NA_child )
+# 
+# # View model summary
+# summary(model101)
+# 
+# model200 <- lmer(Quality ~ 
+#                    Grip_Strength_kg + 
+#                    MRT_Percent_Correct + Fitts_movement_time_avg_ms +
+#                    # Individual level Random effects (nested structure)
+#                    (1 | Participant_Number),
+#                  
+#                  data = df_no_NA_child )
+# 
+# # View model summary
+# summary(model200)
+# 
+# model201 <- lmer(Quality ~ 
+#                    BFI_O + BFI_C + BFI_A + BFI_E + BFI_N+
+#                    # Individual level Random effects (nested structure)
+#                    (1 | Participant_Number),
+#                  
+#                  data = df_no_NA_child )
+# 
+# # View model summary
+# summary(model201)
+# 
+# model300 <- lmer(Economy ~ 
+#                    Grip_Strength_kg + 
+#                    MRT_Percent_Correct + Fitts_movement_time_avg_ms +
+#                    # Individual level Random effects (nested structure)
+#                    (1 | Participant_Number),
+#                  
+#                  data = df_no_NA_child )
+# 
+# # View model summary
+# summary(model300)
+# 
+# model301 <- lmer(Economy ~ 
+#                    BFI_O + BFI_C + BFI_A + BFI_E + BFI_N+
+#                    # Individual level Random effects (nested structure)
+#                    (1 | Participant_Number),
+#                  
+#                  data = df_no_NA_child )
+# 
+# # View model summary
+# summary(model301)
+# 
+# 
+# 
+# 
+# 
+# 
+# 
+# # Approach 1: AICC-based model selection
+# ## main effect only
+# lmer.glmulti <- function (formula, data, random, ...) {
+#   lmer(paste(deparse(formula), random), data = data)
+# }
+# 
+# quantity_multi <- glmulti(y =Quantity ~ Day + 
+#           # Level 2 (individual-level) predictors
+#           Condition + Gender + Grip_Strength_kg + 
+#           MRT_Percent_Correct + Fitts_movement_time_avg_ms +
+#           BFI_O + BFI_C + BFI_A + BFI_E + BFI_N+
+#           Condition*Gender*Day+Grip_Strength_kg*Condition*Gender+
+#           MRT_Percent_Correct*Condition*Gender+Fitts_movement_time_avg_ms*Condition*Gender+
+#           BFI_O*Condition*Gender+ BFI_C*Condition*Gender+BFI_A*Condition*Gender+
+#             BFI_E*Condition*Gender+BFI_N*Condition*Gender,
+#         data = df_no_NA,
+#         random = '+(1 | Participant_Number)',
+#         level = 1,
+#         method = 'h',
+#         crit = 'aicc',
+#         marginality = TRUE,
+#         fitfunc = lmer.glmulti)
+# 
+# quality_multi <- glmulti(y =Quality ~ Day + 
+#                             # Level 2 (individual-level) predictors
+#                             Condition + Gender + Grip_Strength_kg + 
+#                             MRT_Percent_Correct + Fitts_movement_time_avg_ms +
+#                             BFI_O + BFI_C + BFI_A + BFI_E + BFI_N,
+#                           data = df_no_NA,
+#                           random = '+(1 | Participant_Number)',
+#                           level = 1,
+#                           method = 'h',
+#                           crit = 'aicc',
+#                           marginality = TRUE,
+#                           fitfunc = lmer.glmulti)
+# 
+# economy_multi <- glmulti(y =Economy ~ Day + 
+#                            # Level 2 (individual-level) predictors
+#                            Condition + Gender + Grip_Strength_kg + 
+#                            MRT_Percent_Correct + Fitts_movement_time_avg_ms +
+#                            BFI_O + BFI_C + BFI_A + BFI_E + BFI_N,
+#                          data = df_no_NA,
+#                          random = '+(1 | Participant_Number)',
+#                          level = 1,
+#                          method = 'h',
+#                          crit = 'aicc',
+#                          marginality = TRUE,
+#                          fitfunc = lmer.glmulti)
+# saveRDS(quantity_multi, "data/quantity_multi.rds")
+# saveRDS(quality_multi, "data/quality_multi.rds")
+# saveRDS(economy_multi, "data/economy_multi.rds")
+# 
+# print(quantity_multi) #all models
+# print(quality_multi) #all models
+# print(economy_multi)
+# summary(quantity_multi@objects[[1]]) #quantity #1 model
+# summary(quantity_multi@objects[[2]]) #quantity #2 model
+# summary(quantity_multi@objects[[3]]) #quantity #3 model
+# summary(quantity_multi@objects[[4]]) #quantity #4 model
+# 
+# summary(quality_multi@objects[[1]]) #quality #1 model
+# summary(quality_multi@objects[[2]]) #quality #2 model
+# summary(quality_multi@objects[[3]]) #quality #3 model
+# 
+# summary(economy_multi@objects[[1]]) #economy #1 model
+# summary(economy_multi@objects[[2]]) #economy #2 model
+# summary(economy_multi@objects[[3]]) #economy #3 model
+# summary(economy_multi@objects[[4]]) #economy #4 model
+# summary(economy_multi@objects[[5]]) #economy #5 model
+# 
+# ## interaction effect excluding big five
+# 
+# quantity_int <- glmulti(y =Quantity ~ Day + 
+#                             # Level 2 (individual-level) predictors
+#                             Condition + Gender + Grip_Strength_kg + 
+#                             MRT_Percent_Correct + Fitts_movement_time_avg_ms,
+#                           data = df_no_NA,
+#                           random = '+(1 | Participant_Number)',
+#                           level = 2,
+#                           method = 'h',
+#                           crit = 'aicc',
+#                           marginality = TRUE,
+#                           fitfunc = lmer.glmulti)
+# saveRDS(quantity_int, "data/quantity_int.rds")
+# 
+# quality_int <- glmulti(y =Quality ~ Day + 
+#                            # Level 2 (individual-level) predictors
+#                            Condition + Gender + Grip_Strength_kg + 
+#                            MRT_Percent_Correct + Fitts_movement_time_avg_ms,
+#                          data = df_no_NA,
+#                          random = '+(1 | Participant_Number)',
+#                          level = 2,
+#                          method = 'h',
+#                          crit = 'aicc',
+#                          marginality = TRUE,
+#                          fitfunc = lmer.glmulti)
+# saveRDS(quality_int, "data/quality_int.rds")
+# 
+# economy_int <- glmulti(y =Economy ~ Day + 
+#                            # Level 2 (individual-level) predictors
+#                            Condition + Gender + Grip_Strength_kg + 
+#                            MRT_Percent_Correct + Fitts_movement_time_avg_ms,
+#                          data = df_no_NA,
+#                          random = '+(1 | Participant_Number)',
+#                          level = 1,
+#                          method = 'h',
+#                          crit = 'aicc',
+#                          marginality = TRUE,
+#                          fitfunc = lmer.glmulti)
+# saveRDS(economy_int, "data/economy_int.rds")
+# 
+# print(quantity_int) #all models
+# print(quality_int) #all models
+# print(economy_int)
+# summary(quantity_int@objects[[1]]) #quantity #1 model
+# summary(quantity_int@objects[[2]]) #quantity #2 model
+# 
+# 
+# summary(quality_int@objects[[1]]) #quality #1 model
+# summary(quality_int@objects[[2]]) #quality #2 model
+# summary(quality_int@objects[[3]]) #quality #3 model
+# summary(quality_int@objects[[4]]) #quality #4 model
+# 
+# summary(economy_int@objects[[1]]) #economy #1 model
+# summary(economy_int@objects[[2]]) #economy #2 model
+# summary(economy_int@objects[[3]]) #economy #3 model
+# 
+# #########three-way interaction terms added##########
+# 
+# quantity_complete <- lmer(Quantity ~ Day + 
+#                             # Level 2 (individual-level) predictors
+#                             Condition + Gender + Grip_Strength_kg + 
+#                             MRT_Percent_Correct + Fitts_movement_time_avg_ms +
+#                             BFI_O + BFI_C + BFI_A + BFI_E + BFI_N+
+#                             Condition*Gender*Day+Grip_Strength_kg*Condition*Gender+
+#                             MRT_Percent_Correct*Condition*Gender+Fitts_movement_time_avg_ms*Condition*Gender+
+#                             BFI_O*Condition*Gender+ BFI_C*Condition*Gender+BFI_A*Condition*Gender+
+#                             BFI_E*Condition*Gender+BFI_N*Condition*Gender +
+#                             # Random effects
+#                             (1 | Participant_Number),
+#                           data = df_no_NA)
+# 
+# summary(quantity_complete)
+# 
+# 
+# quality_complete <- lmer(Quality ~ Day +
+#                             # Level 2 (individual-level) predictors
+#                             Condition + Gender + Grip_Strength_kg +
+#                             MRT_Percent_Correct + Fitts_movement_time_avg_ms +
+#                             BFI_O + BFI_C + BFI_A + BFI_E + BFI_N +
+#                             # Three-way interaction effect terms
+#                             Condition*Gender*Day+
+#                             Condition*Gender*Grip_Strength_kg+
+#                             Condition*Gender*MRT_Percent_Correct +
+#                             Condition*Gender*Fitts_movement_time_avg_ms +
+#                            BFI_O*Condition*Gender+ BFI_C*Condition*Gender+BFI_A*Condition*Gender+
+#                            BFI_E*Condition*Gender+BFI_N*Condition*Gender +
+#                             # Random effects
+#                             (1 | Participant_Number),
+#                           data = df_no_NA)
+# 
+# summary(quality_complete)
+# 
+# economy_complete <- lmer(Economy ~ Day +
+#                             # Level 2 (individual-level) predictors
+#                             Condition + Gender + Grip_Strength_kg +
+#                             MRT_Percent_Correct + Fitts_movement_time_avg_ms +
+#                             BFI_O + BFI_C + BFI_A + BFI_E + BFI_N +
+#                             # Three-way interaction effect terms
+#                             Condition*Gender*Day+
+#                             Condition*Gender*Grip_Strength_kg+
+#                             Condition*Gender*MRT_Percent_Correct +
+#                             Condition*Gender*Fitts_movement_time_avg_ms +
+#                            BFI_O*Condition*Gender+ BFI_C*Condition*Gender+BFI_A*Condition*Gender+
+#                            BFI_E*Condition*Gender+BFI_N*Condition*Gender +
+#                             # Random effects
+#                             (1 | Participant_Number),
+#                           data = df_no_NA)
+# 
+# summary(economy_complete)
+# 
+# 
+# 
+# 
+# model1 <- lmer(Quantity ~ 
+#                 # Level 1 (core-level) predictors
+#                 Day + 
+#                 
+#                 # Level 2 (individual-level) predictors
+#                 Condition + Gender + Grip_Strength_kg + 
+#                 MRT_Percent_Correct + Fitts_movement_time_avg_ms +
+#                 
+#                 # Individual level Random effects (nested structure)
+#                 (1 | Participant_Number),
+#               
+#               data = df_no_NA)
+# 
+# # View model summary
+# summary(model1)
+# 
+# ###########################
+# model1 <- lmer(Quantity ~ 
+#                  # Level 1 (core-level) predictors
+#                  Day + 
+#                  
+#                  # Level 2 (individual-level) predictors
+#                  Condition + Gender + Grip_Strength_kg + 
+#                  MRT_Percent_Correct + Fitts_movement_time_avg_ms +
+#                  
+#                  # Individual level Random effects (nested structure)
+#                  (1 | Participant_Number) +Day*Condition*Gender,
+#                
+#                data = df_no_NA)
+# 
+# # View model summary
+# summary(model1)
+# 
+# 
+# 
+# model1 <- lmer(Quantity ~ 
+#                  # Level 1 (core-level) predictors
+#                  Day + 
+#                  
+#                  # Level 2 (individual-level) predictors
+#                  Condition + Gender + BFI_O +  BFI_C + BFI_A + BFI_E + BFI_N+
+#                  
+#                  # Individual level Random effects (nested structure)
+#                  (1 | Participant_Number) +Day*Condition*Gender,
+#                
+#                data = df_no_NA)
+# 
+# # View model summary
+# summary(model1)
+# 
+# 
+# 
+# model1 <- lmer(Quality ~ 
+#                  # Level 1 (core-level) predictors
+#                  Day + 
+#                  
+#                  # Level 2 (individual-level) predictors
+#                  Condition + Gender + BFI_O +  BFI_C + BFI_A + BFI_E + BFI_N+
+#                  
+#                  # Individual level Random effects (nested structure)
+#                  (1 | Participant_Number) +Day*Condition*Gender,
+#                
+#                data = df_no_NA)
+# 
+# # View model summary
+# summary(model1)
+# 
+# 
+# model1 <- lmer(Economy ~ 
+#                  # Level 1 (core-level) predictors
+#                  Day + 
+#                  
+#                  # Level 2 (individual-level) predictors
+#                  Condition + Gender + BFI_O +  BFI_C + BFI_A + BFI_E + BFI_N+
+#                  
+#                  # Individual level Random effects (nested structure)
+#                  (1 | Participant_Number) +Day*Condition*Gender,
+#                
+#                data = df_no_NA)
+# 
+# # View model summary
+# summary(model1)
+# ##########################
+# # Build multilevel model
+# model2 <- lmer(Quality ~ 
+#                  # Level 1 (core-level) predictors
+#                  Day + 
+#                  
+#                  # Level 2 (individual-level) predictors
+#                  Condition + Gender + Grip_Strength_kg + 
+#                  MRT_Percent_Correct + Fitts_movement_time_avg_ms +
+#                  
+#                  # Individual level Random effects (nested structure)
+#                  (1 | Participant_Number),
+#                
+#                data = df_no_NA)
+# 
+# # View model summary
+# summary(model2)
+# 
+# # Build multilevel model
+# model3 <- lmer(Economy ~ 
+#                  # Level 1 (core-level) predictors
+#                  Day + 
+#                  
+#                  # Level 2 (individual-level) predictors
+#                  Condition + Gender + Grip_Strength_kg + 
+#                  MRT_Percent_Correct + Fitts_movement_time_avg_ms +
+#                  
+#                  # Individual level Random effects (nested structure)
+#                  (1 | Participant_Number),
+#                
+#                data = df_no_NA)
+# 
+# # View model summary
+# summary(model3)
+# 
+# 
+# 
+# # Approach 2: Seperate model with AIC comparison
+# # Model comparison for Quality outcome
+# modelquality1 <- lmer(Quality ~ Day + (1 | Participant_Number), data = df_no_NA)
+# modelquality2 <- lmer(Quality ~ Condition + Gender + (1 | Participant_Number), data = df_no_NA)
+# modelquality3 <- lmer(Quality ~ Grip_Strength_kg +  MRT_Percent_Correct + Fitts_movement_time_avg_ms + (1 | Participant_Number), data = df_no_NA)
+# 
+# # Create comparison table
+# aic_table <- AIC(model2,modelquality1, modelquality2, modelquality3)
+# aic_table[order(aic_table$AIC), ]
+# summary(modelquality1)
+# summary(modelquality2)
+# summary(modelquality3)
+# 
+# # Model comparison for Quality outcome
+# modelquantity1 <- lmer(Quantity ~ Day + (1 | Participant_Number), data = df_no_NA)
+# modelquantity2 <- lmer(Quantity ~ Condition + Gender + (1 | Participant_Number), data = df_no_NA)
+# modelquantity3 <- lmer(Quantity ~ Grip_Strength_kg +  MRT_Percent_Correct + Fitts_movement_time_avg_ms + (1 | Participant_Number), data = df_no_NA)
+# 
+# # Create comparison table
+# aic_table <- AIC(model1,modelquantity1, modelquantity2, modelquantity3)
+# aic_table[order(aic_table$AIC), ]
+# summary(modelquality1)
+# summary(modelquality2)
+# summary(modelquality3)
+# 
+# # Model comparison for Quality outcome
+# modelEconomy1 <- lmer(Economy ~ Day + (1 | Participant_Number), data = df_no_NA)
+# modelEconomy2 <- lmer(Economy ~ Condition + Gender + (1 | Participant_Number), data = df_no_NA)
+# modelEconomy3 <- lmer(Economy ~ Grip_Strength_kg +  MRT_Percent_Correct + Fitts_movement_time_avg_ms + (1 | Participant_Number), data = df_no_NA)
+# 
+# # Create comparison table
+# aic_table <- AIC(model3,modelEconomy1, modelEconomy2, modelEconomy3)
+# aic_table[order(aic_table$AIC), ]
+# summary(modelEconomy1)
+# summary(modelEconomy2)
+# summary(modelEconomy3)
+# 
+# 
+# 
+# # Alternative comparison using MuMIn package
+# # install.packages("MuMIn")
+# # library(MuMIn)
+# # model_full <- lmer(Quality ~ AgeGroup + Gender + Personality + MotorAccuracy + 
+# #                      MentalRotation + GripStrength + (1|ID), data = data_wide,
+# #                    REML = FALSE)
+# # model_null <- lmer(Quality ~ 1 + (1|ID), data = data_wide, REML = FALSE)
+# # model.sel(model_null, model1, model2, model3, model4, model_full)
+# 
+# 
+# 
+# 
+# modelb51 <- lmer(Quantity ~ 
+#                  # BIG FIVE
+#                  BFI_O +  BFI_C + BFI_A + BFI_E + BFI_N+
+#                  
+#                  # Individual level Random effects (nested structure)
+#                  (1 | Participant_Number),
+#                
+#                data = df_no_NA)
+# 
+# # View model summary
+# summary(modelb51)
+# 
+# modelb52 <- lmer(Quality ~ 
+#                    # BIG FIVE
+#                    BFI_O +  BFI_C + BFI_A + BFI_E + BFI_N+
+#                    
+#                    # Individual level Random effects (nested structure)
+#                    (1 | Participant_Number),
+#                  
+#                  data = df_no_NA)
+# 
+# # View model summary
+# summary(modelb52)
+# 
+# modelb53 <- lmer(Economy ~ 
+#                    # BIG FIVE
+#                    BFI_O +  BFI_C + BFI_A + BFI_E + BFI_N+
+#                    
+#                    # Individual level Random effects (nested structure)
+#                    (1 | Participant_Number),
+#                  
+#                  data = df_no_NA)
+# 
+# # View model summary
+# summary(modelb53)
 
 #############################################################
 # Replication of SPSS visualization 
 ## fig 1 Change in average a) Quantity (PC1), b) Quality (PC2), and c) Economy (PC3) factor scores over training in children and adults. Error bars indicate 95% confidence intervals.
-summary_Quantity <- core_level %>%
+# summary_Quantity <- core_level %>%
+#   group_by(Condition, Day) %>%
+#   summarise(
+#     Mean_Quantity = mean(Quantity),
+#     Std_Error = sd(Quantity) / sqrt(n())
+#   )
+# f1a<-ggplot(summary_Quantity, aes(x = Day, y = Mean_Quantity, color = Condition)) +
+#   geom_line(aes(group = Condition)) +
+#   geom_point(size = 2) +
+#   geom_errorbar(aes(ymin = Mean_Quantity - 1.96 *Std_Error, ymax = Mean_Quantity + 1.96 *Std_Error), width = 0.2) +
+#   scale_color_manual(values = c("darkred", "deepskyblue")) +
+#   labs(x = "Training Session", y = "Mean Quantity") +
+#   theme_minimal(base_size = 14) +
+#   theme(legend.position = "none")
+# 
+# summary_Quality <- core_level %>%
+#   group_by(Condition, Day) %>%
+#   summarise(
+#     Mean_Quality = mean(Quality),
+#     Std_Error = sd(Quality) / sqrt(n())
+#   )
+# f1b<-ggplot(summary_Quality, aes(x = Day, y = Mean_Quality, color = Condition)) +
+#   geom_line(aes(group = Condition)) +
+#   geom_point(size = 2) +
+#   geom_errorbar(aes(ymin = Mean_Quality - 1.96 *Std_Error, ymax = Mean_Quality + 1.96 *Std_Error), width = 0.2) +
+#   scale_color_manual(values = c("darkred", "deepskyblue")) +
+#   labs(x = "Training Session", y = "Mean Quality") +
+#   theme_minimal(base_size = 14) +
+#   theme(legend.position = "none")
+# 
+# summary_Economy <- core_level %>%
+#   group_by(Condition, Day) %>%
+#   summarise(
+#     Mean_Economy = mean(Economy),
+#     Std_Error = sd(Economy) / sqrt(n())
+#   )
+# f1c<-ggplot(summary_Economy, aes(x = Day, y = Mean_Economy, color = Condition)) +
+#   geom_line(aes(group = Condition)) +
+#   geom_point(size = 2) +
+#   geom_errorbar(aes(ymin = Mean_Economy - 1.96 *Std_Error, ymax = Mean_Economy + 1.96 *Std_Error), width = 0.2) +
+#   scale_color_manual(values = c("darkred", "deepskyblue")) +
+#   labs(x = "Training Session", y = "Mean Economy") +
+#   theme_minimal(base_size = 14)
+summary_Quantity <- df_no_NA %>%
   group_by(Condition, Day) %>%
   summarise(
     Mean_Quantity = mean(Quantity),
@@ -427,7 +784,7 @@ f1a<-ggplot(summary_Quantity, aes(x = Day, y = Mean_Quantity, color = Condition)
   theme_minimal(base_size = 14) +
   theme(legend.position = "none")
 
-summary_Quality <- core_level %>%
+summary_Quality <- df_no_NA %>%
   group_by(Condition, Day) %>%
   summarise(
     Mean_Quality = mean(Quality),
@@ -442,7 +799,7 @@ f1b<-ggplot(summary_Quality, aes(x = Day, y = Mean_Quality, color = Condition)) 
   theme_minimal(base_size = 14) +
   theme(legend.position = "none")
 
-summary_Economy <- core_level %>%
+summary_Economy <- df_no_NA %>%
   group_by(Condition, Day) %>%
   summarise(
     Mean_Economy = mean(Economy),
@@ -463,52 +820,52 @@ ggplot2::ggsave("figure/Fig.1 confidence interval.png", width = 18,
 
 
 ## fig 2 Effects of age and gender on average knapping a) Quantity (PC1), b) Quality (PC2), and c) Economy (PC3) over the entire study. 
-ind_level1<- ind_level %>% filter(Gender!="NB")
-level_order <- c('Child', 'Adult') 
-
-summary_Quantity1 <- ind_level1 %>%
-  group_by(Age.Group, Gender) %>%
-  summarise(
-    Mean_Quantity = mean(Quantity_Average),
-    Std_Error = sd(Quantity_Average) / sqrt(n())
-  )
-f2a<-ggplot(summary_Quantity1, aes(x = factor(Age.Group, level = level_order), y = Mean_Quantity, color = Gender)) +
-  geom_line(aes(group = Gender)) +
-  geom_point(size = 2) +
-  geom_errorbar(aes(ymin = Mean_Quantity - 1.96 *Std_Error, ymax = Mean_Quantity + 1.96 *Std_Error), width = 0.2) +
-  scale_color_manual(values = c("purple", "orange")) +
-  labs(x = "Age group", y = "Mean Quantity") +
-  theme_minimal(base_size = 14) +
-  theme(legend.position = "none")
-
-summary_Quality1 <- ind_level1 %>%
-  group_by(Age.Group, Gender) %>%
-  summarise(
-    Mean_Quality = mean(Quality_Average),
-    Std_Error = sd(Quality_Average) / sqrt(n())
-  )
-f2b<-ggplot(summary_Quality1, aes(x = factor(Age.Group, level = level_order), y = Mean_Quality, color = Gender)) +
-  geom_line(aes(group = Gender)) +
-  geom_point(size = 2) +
-  geom_errorbar(aes(ymin = Mean_Quality - 1.96 *Std_Error, ymax = Mean_Quality + 1.96 *Std_Error), width = 0.2) +
-  scale_color_manual(values = c("purple", "orange")) +
-  labs(x = "Age group", y = "Mean Quality") +
-  theme_minimal(base_size = 14) +
-  theme(legend.position = "none")
-
-summary_Economy1 <- ind_level1 %>%
-  group_by(Age.Group, Gender) %>%
-  summarise(
-    Mean_Economy = mean(Economy_Average),
-    Std_Error = sd(Economy_Average) / sqrt(n())
-  )
-f2c<-ggplot(summary_Economy1, aes(x = factor(Age.Group, level = level_order), y = Mean_Economy, color = Gender)) +
-  geom_line(aes(group = Gender)) +
-  geom_point(size = 2) +
-  geom_errorbar(aes(ymin = Mean_Economy - 1.96 *Std_Error, ymax = Mean_Economy + 1.96 *Std_Error), width = 0.2) +
-  scale_color_manual(values = c("purple", "orange")) +
-  labs(x = "Age group", y = "Mean Economy") +
-  theme_minimal(base_size = 14)
+# ind_level1<- ind_level %>% filter(Gender!="NB")
+# level_order <- c('Child', 'Adult') 
+# 
+# summary_Quantity1 <- ind_level1 %>%
+#   group_by(Age.Group, Gender) %>%
+#   summarise(
+#     Mean_Quantity = mean(Quantity_Average),
+#     Std_Error = sd(Quantity_Average) / sqrt(n())
+#   )
+# f2a<-ggplot(summary_Quantity1, aes(x = factor(Age.Group, level = level_order), y = Mean_Quantity, color = Gender)) +
+#   geom_line(aes(group = Gender)) +
+#   geom_point(size = 2) +
+#   geom_errorbar(aes(ymin = Mean_Quantity - 1.96 *Std_Error, ymax = Mean_Quantity + 1.96 *Std_Error), width = 0.2) +
+#   scale_color_manual(values = c("purple", "orange")) +
+#   labs(x = "Age group", y = "Mean Quantity") +
+#   theme_minimal(base_size = 14) +
+#   theme(legend.position = "none")
+# 
+# summary_Quality1 <- ind_level1 %>%
+#   group_by(Age.Group, Gender) %>%
+#   summarise(
+#     Mean_Quality = mean(Quality_Average),
+#     Std_Error = sd(Quality_Average) / sqrt(n())
+#   )
+# f2b<-ggplot(summary_Quality1, aes(x = factor(Age.Group, level = level_order), y = Mean_Quality, color = Gender)) +
+#   geom_line(aes(group = Gender)) +
+#   geom_point(size = 2) +
+#   geom_errorbar(aes(ymin = Mean_Quality - 1.96 *Std_Error, ymax = Mean_Quality + 1.96 *Std_Error), width = 0.2) +
+#   scale_color_manual(values = c("purple", "orange")) +
+#   labs(x = "Age group", y = "Mean Quality") +
+#   theme_minimal(base_size = 14) +
+#   theme(legend.position = "none")
+# 
+# summary_Economy1 <- ind_level1 %>%
+#   group_by(Age.Group, Gender) %>%
+#   summarise(
+#     Mean_Economy = mean(Economy_Average),
+#     Std_Error = sd(Economy_Average) / sqrt(n())
+#   )
+# f2c<-ggplot(summary_Economy1, aes(x = factor(Age.Group, level = level_order), y = Mean_Economy, color = Gender)) +
+#   geom_line(aes(group = Gender)) +
+#   geom_point(size = 2) +
+#   geom_errorbar(aes(ymin = Mean_Economy - 1.96 *Std_Error, ymax = Mean_Economy + 1.96 *Std_Error), width = 0.2) +
+#   scale_color_manual(values = c("purple", "orange")) +
+#   labs(x = "Age group", y = "Mean Economy") +
+#   theme_minimal(base_size = 14)
 
 patchwork <- f2a + f2b + f2c
 patchwork + plot_annotation(tag_levels = 'a')
@@ -519,116 +876,116 @@ ggplot2::ggsave("figure/Fig.2 age-gender cf.png", width = 18,
 
 
 ## fig 2 Effects of age and gender on average knapping a) Quantity (PC1), b) Quality (PC2), and c) Economy (PC3) over the entire study. 
-ind_level1<- ind_level %>% filter(Gender!="NB")
-level_order <- c('Child', 'Adult') 
-
-summary_Quantity1 <- ind_level1 %>%
-  group_by(Age.Group, Gender) %>%
-  summarise(
-    Mean_Quantity = mean(Quantity_Average),
-    Std_Error = sd(Quantity_Average) / sqrt(n())
-  )
-f2a<-ggplot(summary_Quantity1, aes(x = factor(Age.Group, level = level_order), y = Mean_Quantity, color = Gender)) +
-  geom_line(aes(group = Gender)) +
-  geom_point(size = 2) +
-  geom_errorbar(aes(ymin = Mean_Quantity -Std_Error, ymax = Mean_Quantity +Std_Error), width = 0.2) +
-  scale_color_manual(values = c("purple", "orange")) +
-  labs(x = "Age group", y = "Mean Quantity") +
-  theme_minimal(base_size = 14) +
-  theme(legend.position = "none")
-
-summary_Quality1 <- ind_level1 %>%
-  group_by(Age.Group, Gender) %>%
-  summarise(
-    Mean_Quality = mean(Quality_Average),
-    Std_Error = sd(Quality_Average) / sqrt(n())
-  )
-f2b<-ggplot(summary_Quality1, aes(x = factor(Age.Group, level = level_order), y = Mean_Quality, color = Gender)) +
-  geom_line(aes(group = Gender)) +
-  geom_point(size = 2) +
-  geom_errorbar(aes(ymin = Mean_Quality -Std_Error, ymax = Mean_Quality + Std_Error), width = 0.2) +
-  scale_color_manual(values = c("purple", "orange")) +
-  labs(x = "Age group", y = "Mean Quality") +
-  theme_minimal(base_size = 14) +
-  theme(legend.position = "none")
-
-summary_Economy1 <- ind_level1 %>%
-  group_by(Age.Group, Gender) %>%
-  summarise(
-    Mean_Economy = mean(Economy_Average),
-    Std_Error = sd(Economy_Average) / sqrt(n())
-  )
-f2c<-ggplot(summary_Economy1, aes(x = factor(Age.Group, level = level_order), y = Mean_Economy, color = Gender)) +
-  geom_line(aes(group = Gender)) +
-  geom_point(size = 2) +
-  geom_errorbar(aes(ymin = Mean_Economy -Std_Error, ymax = Mean_Economy +Std_Error), width = 0.2) +
-  scale_color_manual(values = c("purple", "orange")) +
-  labs(x = "Age group", y = "Mean Economy") +
-  theme_minimal(base_size = 14)
-
-patchwork <- f2a + f2b + f2c
-patchwork + plot_annotation(tag_levels = 'a')
-ggplot2::ggsave("figure/Fig.2 age-gender se.png", width = 18,
-                height = 5, bg = "white", dpi = 600)
-
-
-
-
-
+# ind_level1<- ind_level %>% filter(Gender!="NB")
+# level_order <- c('Child', 'Adult') 
+# 
+# summary_Quantity1 <- ind_level1 %>%
+#   group_by(Age.Group, Gender) %>%
+#   summarise(
+#     Mean_Quantity = mean(Quantity_Average),
+#     Std_Error = sd(Quantity_Average) / sqrt(n())
+#   )
+# f2a<-ggplot(summary_Quantity1, aes(x = factor(Age.Group, level = level_order), y = Mean_Quantity, color = Gender)) +
+#   geom_line(aes(group = Gender)) +
+#   geom_point(size = 2) +
+#   geom_errorbar(aes(ymin = Mean_Quantity -Std_Error, ymax = Mean_Quantity +Std_Error), width = 0.2) +
+#   scale_color_manual(values = c("purple", "orange")) +
+#   labs(x = "Age group", y = "Mean Quantity") +
+#   theme_minimal(base_size = 14) +
+#   theme(legend.position = "none")
+# 
+# summary_Quality1 <- ind_level1 %>%
+#   group_by(Age.Group, Gender) %>%
+#   summarise(
+#     Mean_Quality = mean(Quality_Average),
+#     Std_Error = sd(Quality_Average) / sqrt(n())
+#   )
+# f2b<-ggplot(summary_Quality1, aes(x = factor(Age.Group, level = level_order), y = Mean_Quality, color = Gender)) +
+#   geom_line(aes(group = Gender)) +
+#   geom_point(size = 2) +
+#   geom_errorbar(aes(ymin = Mean_Quality -Std_Error, ymax = Mean_Quality + Std_Error), width = 0.2) +
+#   scale_color_manual(values = c("purple", "orange")) +
+#   labs(x = "Age group", y = "Mean Quality") +
+#   theme_minimal(base_size = 14) +
+#   theme(legend.position = "none")
+# 
+# summary_Economy1 <- ind_level1 %>%
+#   group_by(Age.Group, Gender) %>%
+#   summarise(
+#     Mean_Economy = mean(Economy_Average),
+#     Std_Error = sd(Economy_Average) / sqrt(n())
+#   )
+# f2c<-ggplot(summary_Economy1, aes(x = factor(Age.Group, level = level_order), y = Mean_Economy, color = Gender)) +
+#   geom_line(aes(group = Gender)) +
+#   geom_point(size = 2) +
+#   geom_errorbar(aes(ymin = Mean_Economy -Std_Error, ymax = Mean_Economy +Std_Error), width = 0.2) +
+#   scale_color_manual(values = c("purple", "orange")) +
+#   labs(x = "Age group", y = "Mean Economy") +
+#   theme_minimal(base_size = 14)
+# 
+# patchwork <- f2a + f2b + f2c
+# patchwork + plot_annotation(tag_levels = 'a')
+# ggplot2::ggsave("figure/Fig.2 age-gender se.png", width = 18,
+#                 height = 5, bg = "white", dpi = 600)
+# 
+# 
+# 
+# 
+# 
 
 ## fig 3 Effects of age and gender on individual a) grip strength, b) mental rotation, and c) motor accuracy
-ind_level1<- ind_level %>% filter(Gender!="NB")
-level_order <- c('Child', 'Adult') 
-
-summary_Grip <- ind_level1 %>% drop_na(Grip_Strength_kg) %>%
-  group_by(Age.Group, Gender) %>%
-  summarise(
-    Mean_Quantity = mean(Grip_Strength_kg),
-    Std_Error = sd(Grip_Strength_kg) / sqrt(n())
-  )
-f3a<-ggplot(summary_Grip, aes(x = factor(Age.Group, level = level_order), y = Mean_Quantity, color = Gender)) +
-  geom_line(aes(group = Gender)) +
-  geom_point(size = 2) +
-  geom_errorbar(aes(ymin = Mean_Quantity -Std_Error, ymax = Mean_Quantity +Std_Error), width = 0.2) +
-  scale_color_manual(values = c("purple", "orange")) +
-  labs(x = "Age group", y = "Grip strength (kg)") +
-  theme_minimal(base_size = 14) +
-  theme(legend.position = "none")
-
-summary_mental <- ind_level1 %>% drop_na(MRT_Percent_Correct) %>%
-  group_by(Age.Group, Gender) %>%
-  summarise(
-    Mean_Quality = mean(MRT_Percent_Correct),
-    Std_Error = sd(MRT_Percent_Correct) / sqrt(n())
-  )
-f3b<-ggplot(summary_mental, aes(x = factor(Age.Group, level = level_order), y = Mean_Quality, color = Gender)) +
-  geom_line(aes(group = Gender)) +
-  geom_point(size = 2) +
-  geom_errorbar(aes(ymin = Mean_Quality -Std_Error, ymax = Mean_Quality + Std_Error), width = 0.2) +
-  scale_color_manual(values = c("purple", "orange")) +
-  labs(x = "Age group", y = "Mental rotation test (%correct)") +
-  theme_minimal(base_size = 14) +
-  theme(legend.position = "none")
-
-summary_fitts <- ind_level1 %>%drop_na(Fitts_movement_time_avg_ms) %>%
-  group_by(Age.Group, Gender) %>%
-  summarise(
-    Mean_Economy = mean(Fitts_movement_time_avg_ms),
-    Std_Error = sd(Fitts_movement_time_avg_ms) / sqrt(n())
-  )
-f3c<-ggplot(summary_fitts, aes(x = factor(Age.Group, level = level_order), y = Mean_Economy, color = Gender)) +
-  geom_line(aes(group = Gender)) +
-  geom_point(size = 2) +
-  geom_errorbar(aes(ymin = Mean_Economy -Std_Error, ymax = Mean_Economy +Std_Error), width = 0.2) +
-  scale_color_manual(values = c("purple", "orange")) +
-  labs(x = "Age group", y = "Fitts test average time (ms)") +
-  theme_minimal(base_size = 14)
-
-patchwork <- f3a + f3b + f3c
-patchwork + plot_annotation(tag_levels = 'a')
-ggplot2::ggsave("figure/Fig.3 age-gender-motor-cog se.png", width = 18,
-                height = 5, bg = "white", dpi = 600)
-
+# ind_level1<- ind_level %>% filter(Gender!="NB")
+# level_order <- c('Child', 'Adult') 
+# 
+# summary_Grip <- ind_level1 %>% drop_na(Grip_Strength_kg) %>%
+#   group_by(Age.Group, Gender) %>%
+#   summarise(
+#     Mean_Quantity = mean(Grip_Strength_kg),
+#     Std_Error = sd(Grip_Strength_kg) / sqrt(n())
+#   )
+# f3a<-ggplot(summary_Grip, aes(x = factor(Age.Group, level = level_order), y = Mean_Quantity, color = Gender)) +
+#   geom_line(aes(group = Gender)) +
+#   geom_point(size = 2) +
+#   geom_errorbar(aes(ymin = Mean_Quantity -Std_Error, ymax = Mean_Quantity +Std_Error), width = 0.2) +
+#   scale_color_manual(values = c("purple", "orange")) +
+#   labs(x = "Age group", y = "Grip strength (kg)") +
+#   theme_minimal(base_size = 14) +
+#   theme(legend.position = "none")
+# 
+# summary_mental <- ind_level1 %>% drop_na(MRT_Percent_Correct) %>%
+#   group_by(Age.Group, Gender) %>%
+#   summarise(
+#     Mean_Quality = mean(MRT_Percent_Correct),
+#     Std_Error = sd(MRT_Percent_Correct) / sqrt(n())
+#   )
+# f3b<-ggplot(summary_mental, aes(x = factor(Age.Group, level = level_order), y = Mean_Quality, color = Gender)) +
+#   geom_line(aes(group = Gender)) +
+#   geom_point(size = 2) +
+#   geom_errorbar(aes(ymin = Mean_Quality -Std_Error, ymax = Mean_Quality + Std_Error), width = 0.2) +
+#   scale_color_manual(values = c("purple", "orange")) +
+#   labs(x = "Age group", y = "Mental rotation test (%correct)") +
+#   theme_minimal(base_size = 14) +
+#   theme(legend.position = "none")
+# 
+# summary_fitts <- ind_level1 %>%drop_na(Fitts_movement_time_avg_ms) %>%
+#   group_by(Age.Group, Gender) %>%
+#   summarise(
+#     Mean_Economy = mean(Fitts_movement_time_avg_ms),
+#     Std_Error = sd(Fitts_movement_time_avg_ms) / sqrt(n())
+#   )
+# f3c<-ggplot(summary_fitts, aes(x = factor(Age.Group, level = level_order), y = Mean_Economy, color = Gender)) +
+#   geom_line(aes(group = Gender)) +
+#   geom_point(size = 2) +
+#   geom_errorbar(aes(ymin = Mean_Economy -Std_Error, ymax = Mean_Economy +Std_Error), width = 0.2) +
+#   scale_color_manual(values = c("purple", "orange")) +
+#   labs(x = "Age group", y = "Fitts test average time (ms)") +
+#   theme_minimal(base_size = 14)
+# 
+# patchwork <- f3a + f3b + f3c
+# patchwork + plot_annotation(tag_levels = 'a')
+# ggplot2::ggsave("figure/Fig.3 age-gender-motor-cog se.png", width = 18,
+#                 height = 5, bg = "white", dpi = 600)
+# 
 
 
 ## fig 4 Relationship of average knapping Quantity to individual a) grip strength, b) mental rotation, and c) motor accuracy. Panel a) also includes a Loess fit line (50% of points, Epanechnikov kernel) to illustrate the changing relationship at approximately 30 kg.
