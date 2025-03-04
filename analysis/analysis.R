@@ -5,7 +5,9 @@ library(lmerTest)
 library(patchwork)
 library(ggpubr)
 library(glmulti)
-
+library(performance)
+library(see)
+library(rempsyc)
 # import data
 ind_level <- read.csv("data/individual__data_by_participant.csv", fileEncoding="UTF-8-BOM")
 core_level <- read.csv("data/lithic_data_by_core.csv", fileEncoding="UTF-8-BOM")
@@ -37,8 +39,9 @@ model1 <- lmer(Quantity ~
 
 # View model summary
 summary(model1)
-
-
+# plot(check_residuals(model1))
+# plot(check_normality(model1))
+# plot(check_heteroscedasticity(model1))
 
 model2 <- lmer(Quality ~ 
                  # Level 1 (core-level) predictors
@@ -866,72 +869,34 @@ ggplot2::ggsave("figure/Fig.1 confidence interval.png", width = 18,
 #   scale_color_manual(values = c("purple", "orange")) +
 #   labs(x = "Age group", y = "Mean Economy") +
 #   theme_minimal(base_size = 14)
+f2a<-ggplot(df_no_NA, aes(x = Grip_Strength_kg, y = Quantity)) +
+  geom_point(aes(color = Age.in.years)) +
+  geom_smooth(method = "lm", aes(group = 1),se = FALSE, colour="darkred", linewidth = 0.5)+
+  geom_smooth(method = "loess", aes(group = 1),se = FALSE, colour="darkred", linetype = "dotdash", linewidth = 0.5)+
+  labs(x = "Grip strength (kg)", y = "Quantity") +
+  theme_minimal(base_size = 14) +
+  theme(legend.position = "none")
+# +   ggpubr::stat_cor(method = "pearson", label.x = 45, label.y = 1.2)
+
+f2b<-ggplot(df_no_NA, aes(x = MRT_Percent_Correct, y = Quantity)) +
+  geom_point(aes(color = Age.in.years)) +
+  geom_smooth(method = "lm", aes(group = 1),se = FALSE, colour="darkred", linewidth = 0.5)+
+  labs(x = "Mental rotation test (%correct)", y = "Quantity") +
+  theme_minimal(base_size = 14) +
+  theme(legend.position = "none")
+
+f2c<-ggplot(df_no_NA, aes(x = Fitts_movement_time_avg_ms, y = Quantity)) +
+  geom_point(aes(color = Age.in.years)) +
+  geom_smooth(method = "lm", aes(group = 1),se = FALSE, colour="darkred", linewidth = 0.5)+
+  labs(x = "Fitts test average time (ms)", y = "Quantity") +
+  theme_minimal(base_size = 14)
 
 patchwork <- f2a + f2b + f2c
 patchwork + plot_annotation(tag_levels = 'a')
-ggplot2::ggsave("figure/Fig.2 age-gender cf.png", width = 18,
+ggplot2::ggsave("figure/Fig.2 quantity cog-motor.png", width = 18,
                 height = 5, bg = "white", dpi = 600)
 
 
-
-
-## fig 2 Effects of age and gender on average knapping a) Quantity (PC1), b) Quality (PC2), and c) Economy (PC3) over the entire study. 
-# ind_level1<- ind_level %>% filter(Gender!="NB")
-# level_order <- c('Child', 'Adult') 
-# 
-# summary_Quantity1 <- ind_level1 %>%
-#   group_by(Age.Group, Gender) %>%
-#   summarise(
-#     Mean_Quantity = mean(Quantity_Average),
-#     Std_Error = sd(Quantity_Average) / sqrt(n())
-#   )
-# f2a<-ggplot(summary_Quantity1, aes(x = factor(Age.Group, level = level_order), y = Mean_Quantity, color = Gender)) +
-#   geom_line(aes(group = Gender)) +
-#   geom_point(size = 2) +
-#   geom_errorbar(aes(ymin = Mean_Quantity -Std_Error, ymax = Mean_Quantity +Std_Error), width = 0.2) +
-#   scale_color_manual(values = c("purple", "orange")) +
-#   labs(x = "Age group", y = "Mean Quantity") +
-#   theme_minimal(base_size = 14) +
-#   theme(legend.position = "none")
-# 
-# summary_Quality1 <- ind_level1 %>%
-#   group_by(Age.Group, Gender) %>%
-#   summarise(
-#     Mean_Quality = mean(Quality_Average),
-#     Std_Error = sd(Quality_Average) / sqrt(n())
-#   )
-# f2b<-ggplot(summary_Quality1, aes(x = factor(Age.Group, level = level_order), y = Mean_Quality, color = Gender)) +
-#   geom_line(aes(group = Gender)) +
-#   geom_point(size = 2) +
-#   geom_errorbar(aes(ymin = Mean_Quality -Std_Error, ymax = Mean_Quality + Std_Error), width = 0.2) +
-#   scale_color_manual(values = c("purple", "orange")) +
-#   labs(x = "Age group", y = "Mean Quality") +
-#   theme_minimal(base_size = 14) +
-#   theme(legend.position = "none")
-# 
-# summary_Economy1 <- ind_level1 %>%
-#   group_by(Age.Group, Gender) %>%
-#   summarise(
-#     Mean_Economy = mean(Economy_Average),
-#     Std_Error = sd(Economy_Average) / sqrt(n())
-#   )
-# f2c<-ggplot(summary_Economy1, aes(x = factor(Age.Group, level = level_order), y = Mean_Economy, color = Gender)) +
-#   geom_line(aes(group = Gender)) +
-#   geom_point(size = 2) +
-#   geom_errorbar(aes(ymin = Mean_Economy -Std_Error, ymax = Mean_Economy +Std_Error), width = 0.2) +
-#   scale_color_manual(values = c("purple", "orange")) +
-#   labs(x = "Age group", y = "Mean Economy") +
-#   theme_minimal(base_size = 14)
-# 
-# patchwork <- f2a + f2b + f2c
-# patchwork + plot_annotation(tag_levels = 'a')
-# ggplot2::ggsave("figure/Fig.2 age-gender se.png", width = 18,
-#                 height = 5, bg = "white", dpi = 600)
-# 
-# 
-# 
-# 
-# 
 
 ## fig 3 Effects of age and gender on individual a) grip strength, b) mental rotation, and c) motor accuracy
 # ind_level1<- ind_level %>% filter(Gender!="NB")
@@ -980,7 +945,32 @@ ggplot2::ggsave("figure/Fig.2 age-gender cf.png", width = 18,
 #   scale_color_manual(values = c("purple", "orange")) +
 #   labs(x = "Age group", y = "Fitts test average time (ms)") +
 #   theme_minimal(base_size = 14)
-# 
+f3a<-ggplot(df_no_NA, aes(x = Grip_Strength_kg, y = Quality)) +
+  geom_point(aes(color = Age.in.years)) +
+  geom_smooth(method = "lm", aes(group = 1),se = FALSE, colour="darkred", linewidth = 0.5)+
+  labs(x = "Grip strength (kg)", y = "Quality") +
+  theme_minimal(base_size = 14) +
+  theme(legend.position = "none")
+# +   ggpubr::stat_cor(method = "pearson", label.x = 45, label.y = 1.2)
+
+f3b<-ggplot(df_no_NA, aes(x = MRT_Percent_Correct, y = Quality)) +
+  geom_point(aes(color = Age.in.years)) +
+  geom_smooth(method = "lm", aes(group = 1),se = FALSE, colour="darkred", linewidth = 0.5)+
+  labs(x = "Mental rotation test (%correct)", y = "Quality") +
+  theme_minimal(base_size = 14) +
+  theme(legend.position = "none")
+
+f3c<-ggplot(df_no_NA, aes(x = Fitts_movement_time_avg_ms, y = Quality)) +
+  geom_point(aes(color = Age.in.years)) +
+  geom_smooth(method = "lm", aes(group = 1),se = FALSE, colour="darkred", linewidth = 0.5)+
+  geom_smooth(method = "loess", aes(group = 1),se = FALSE, colour="darkred", linetype = "dotdash", linewidth = 0.5)+
+  labs(x = "Fitts test average time (ms)", y = "Quality") +
+  theme_minimal(base_size = 14)
+
+patchwork <- f3a + f3b + f3c
+patchwork + plot_annotation(tag_levels = 'a')
+ggplot2::ggsave("figure/Fig.3 quality cog-motor.png", width = 18,
+                height = 5, bg = "white", dpi = 600)
 # patchwork <- f3a + f3b + f3c
 # patchwork + plot_annotation(tag_levels = 'a')
 # ggplot2::ggsave("figure/Fig.3 age-gender-motor-cog se.png", width = 18,
@@ -989,134 +979,211 @@ ggplot2::ggsave("figure/Fig.2 age-gender cf.png", width = 18,
 
 
 ## fig 4 Relationship of average knapping Quantity to individual a) grip strength, b) mental rotation, and c) motor accuracy. Panel a) also includes a Loess fit line (50% of points, Epanechnikov kernel) to illustrate the changing relationship at approximately 30 kg.
-f4a<-ggplot(ind_level, aes(x = Grip_Strength_kg, y = Quantity_Average, color = Age.Group)) +
-  geom_point() +
-  geom_smooth(method = "lm", aes(group = 1),se = FALSE, colour="black", linewidth = 0.5)+
-  geom_smooth(method = "loess", aes(group = 1),se = FALSE, colour="black", linetype = "dotdash", linewidth = 0.5)+
-  scale_color_manual(values = c("darkred", "deepskyblue")) +
-  labs(x = "Grip strength (kg) (n=46)", y = "Quantity") +
+# f4a<-ggplot(ind_level, aes(x = Grip_Strength_kg, y = Quantity_Average, color = Age.Group)) +
+#   geom_point() +
+#   geom_smooth(method = "lm", aes(group = 1),se = FALSE, colour="black", linewidth = 0.5)+
+#   geom_smooth(method = "loess", aes(group = 1),se = FALSE, colour="black", linetype = "dotdash", linewidth = 0.5)+
+#   scale_color_manual(values = c("darkred", "deepskyblue")) +
+#   labs(x = "Grip strength (kg) (n=46)", y = "Quantity") +
+#   theme_minimal(base_size = 14) +
+#   theme(legend.position = "none")
+# # +   ggpubr::stat_cor(method = "pearson", label.x = 45, label.y = 1.2)
+# 
+# f4b<-ggplot(ind_level, aes(x = MRT_Percent_Correct, y = Quantity_Average, color = Age.Group)) +
+#   geom_point() +
+#   geom_smooth(method = "lm", aes(group = 1),se = FALSE, colour="black", linewidth = 0.5)+
+#   scale_color_manual(values = c("darkred", "deepskyblue")) +
+#   labs(x = "Mental rotation test (%correct) (n=49)",y = NULL) +
+#   theme_minimal(base_size = 14) +
+#   theme(legend.position = "none")
+# # +  ggpubr::stat_cor(method = "pearson", label.x = 85, label.y = 1.5)
+# 
+# f4c<-ggplot(ind_level, aes(x = Fitts_movement_time_avg_ms, y = Quantity_Average, color = Age.Group)) +
+#   geom_point() +
+#   geom_smooth(method = "lm", aes(group = 1),se = FALSE, colour="black", linewidth = 0.5)+
+#   scale_color_manual(values = c("darkred", "deepskyblue")) +
+#   labs(x = "Fitts test average time (ms) (n=48)", y = NULL) +
+#   theme_minimal(base_size = 14) + labs(color='Age group') 
+# # +  ggpubr::stat_cor(method = "pearson", label.x = 2200, label.y = 1.5)
+f4a<-ggplot(df_no_NA, aes(x = Grip_Strength_kg, y = Economy)) +
+  geom_point(aes(color = Age.in.years)) +
+  geom_smooth(method = "lm", aes(group = 1),se = FALSE, colour="darkred", linewidth = 0.5)+
+  labs(x = "Grip strength (kg)", y = "Economy") +
   theme_minimal(base_size = 14) +
   theme(legend.position = "none")
 # +   ggpubr::stat_cor(method = "pearson", label.x = 45, label.y = 1.2)
 
-f4b<-ggplot(ind_level, aes(x = MRT_Percent_Correct, y = Quantity_Average, color = Age.Group)) +
-  geom_point() +
-  geom_smooth(method = "lm", aes(group = 1),se = FALSE, colour="black", linewidth = 0.5)+
-  scale_color_manual(values = c("darkred", "deepskyblue")) +
-  labs(x = "Mental rotation test (%correct) (n=49)",y = NULL) +
+f4b<-ggplot(df_no_NA, aes(x = MRT_Percent_Correct, y = Economy)) +
+  geom_point(aes(color = Age.in.years)) +
+  geom_smooth(method = "lm", aes(group = 1),se = FALSE, colour="darkred", linewidth = 0.5)+
+  labs(x = "Mental rotation test (%correct)", y = "Economy") +
   theme_minimal(base_size = 14) +
   theme(legend.position = "none")
-# +  ggpubr::stat_cor(method = "pearson", label.x = 85, label.y = 1.5)
 
-f4c<-ggplot(ind_level, aes(x = Fitts_movement_time_avg_ms, y = Quantity_Average, color = Age.Group)) +
-  geom_point() +
-  geom_smooth(method = "lm", aes(group = 1),se = FALSE, colour="black", linewidth = 0.5)+
-  scale_color_manual(values = c("darkred", "deepskyblue")) +
-  labs(x = "Fitts test average time (ms) (n=48)", y = NULL) +
-  theme_minimal(base_size = 14) + labs(color='Age group') 
-# +  ggpubr::stat_cor(method = "pearson", label.x = 2200, label.y = 1.5)
+f4c<-ggplot(df_no_NA, aes(x = Fitts_movement_time_avg_ms, y = Economy)) +
+  geom_point(aes(color = Age.in.years)) +
+  geom_smooth(method = "lm", aes(group = 1),se = FALSE, colour="darkred", linewidth = 0.5)+
+  labs(x = "Fitts test average time (ms)", y = "Economy") +
+  theme_minimal(base_size = 14)
 
 patchwork <- f4a + f4b + f4c
 patchwork + plot_annotation(tag_levels = 'a')
-ggplot2::ggsave("figure/Fig.4 quantity-cog.png", width = 18,
+ggplot2::ggsave("figure/Fig.4 economy cog-motor.png", width = 18,
                 height = 5, bg = "white", dpi = 600)
 
 
 
 ## fig 5 Relationship of average knapping Quality to individual a) grip strength, b) mental rotation, and c) motor accuracy. Panel a) also includes a Loess fit line (50% of points, Epanechnikov kernel) to illustrate the changing relationship at approximately 30 kg.
-f5a<-ggplot(ind_level, aes(x = Grip_Strength_kg, y = Quality_Average, color = Age.Group)) +
-  geom_point() +
-  geom_smooth(method = "lm", aes(group = 1),se = FALSE, colour="black", linewidth = 0.5)+
-  scale_color_manual(values = c("darkred", "deepskyblue")) +
-  labs(x = "Grip strength (kg) (n=46)", y = "Quality") +
+# f5a<-ggplot(ind_level, aes(x = Grip_Strength_kg, y = Quality_Average, color = Age.Group)) +
+#   geom_point() +
+#   geom_smooth(method = "lm", aes(group = 1),se = FALSE, colour="black", linewidth = 0.5)+
+#   scale_color_manual(values = c("darkred", "deepskyblue")) +
+#   labs(x = "Grip strength (kg) (n=46)", y = "Quality") +
+#   theme_minimal(base_size = 14) +
+#   theme(legend.position = "none")
+# # +   ggpubr::stat_cor(method = "pearson", label.x = 45, label.y = 1.2)
+# 
+# f5b<-ggplot(ind_level, aes(x = MRT_Percent_Correct, y = Quality_Average, color = Age.Group)) +
+#   geom_point() +
+#   geom_smooth(method = "lm", aes(group = 1),se = FALSE, colour="black", linewidth = 0.5)+
+#   scale_color_manual(values = c("darkred", "deepskyblue")) +
+#   labs(x = "Mental rotation test (%correct) (n=49)",y = NULL) +
+#   theme_minimal(base_size = 14) +
+#   theme(legend.position = "none")
+# # +  ggpubr::stat_cor(method = "pearson", label.x = 85, label.y = 1.5)
+# 
+# f5c<-ggplot(ind_level, aes(x = Fitts_movement_time_avg_ms, y = Quality_Average, color = Age.Group)) +
+#   geom_point() +
+#   geom_smooth(method = "lm", aes(group = 1),se = FALSE, colour="black", linewidth = 0.5)+
+#   scale_color_manual(values = c("darkred", "deepskyblue")) +
+#   geom_smooth(method = "loess", aes(group = 1),se = FALSE, colour="black", linetype = "dotdash", linewidth = 0.5)+
+#   labs(x = "Fitts test average time (ms) (n=46)", y = NULL) +
+#   theme_minimal(base_size = 14) + labs(color='Age group') 
+# +  ggpubr::stat_cor(method = "pearson", label.x = 2200, label.y = 1.5)
+f5a<-ggplot(df_no_NA, aes(x = BFI_O, y = Economy)) +
+  geom_point(aes(color = Age.in.years)) +
+  geom_smooth(method = "lm", aes(group = 1),se = FALSE, colour="darkred", linewidth = 0.5)+
+  labs(x = "Openness", y = "Economy") +
   theme_minimal(base_size = 14) +
   theme(legend.position = "none")
 # +   ggpubr::stat_cor(method = "pearson", label.x = 45, label.y = 1.2)
 
-f5b<-ggplot(ind_level, aes(x = MRT_Percent_Correct, y = Quality_Average, color = Age.Group)) +
-  geom_point() +
-  geom_smooth(method = "lm", aes(group = 1),se = FALSE, colour="black", linewidth = 0.5)+
-  scale_color_manual(values = c("darkred", "deepskyblue")) +
-  labs(x = "Mental rotation test (%correct) (n=49)",y = NULL) +
+f5b<-ggplot(df_no_NA, aes(x = BFI_A, y = Economy)) +
+  geom_point(aes(color = Age.in.years)) +
+  geom_smooth(method = "lm", aes(group = 1),se = FALSE, colour="darkred", linewidth = 0.5)+
+  labs(x = "Agreeableness", y = "Economy") +
   theme_minimal(base_size = 14) +
   theme(legend.position = "none")
-# +  ggpubr::stat_cor(method = "pearson", label.x = 85, label.y = 1.5)
 
-f5c<-ggplot(ind_level, aes(x = Fitts_movement_time_avg_ms, y = Quality_Average, color = Age.Group)) +
-  geom_point() +
-  geom_smooth(method = "lm", aes(group = 1),se = FALSE, colour="black", linewidth = 0.5)+
-  scale_color_manual(values = c("darkred", "deepskyblue")) +
-  geom_smooth(method = "loess", aes(group = 1),se = FALSE, colour="black", linetype = "dotdash", linewidth = 0.5)+
-  labs(x = "Fitts test average time (ms) (n=46)", y = NULL) +
-  theme_minimal(base_size = 14) + labs(color='Age group') 
-# +  ggpubr::stat_cor(method = "pearson", label.x = 2200, label.y = 1.5)
-
+f5c<-ggplot(df_no_NA, aes(x = BFI_N, y = Economy)) +
+  geom_point(aes(color = Age.in.years)) +
+  geom_smooth(method = "lm", aes(group = 1),se = FALSE, colour="darkred", linewidth = 0.5)+
+  labs(x = "Neuroticism", y = "Economy") +
+  theme_minimal(base_size = 14)
 patchwork <- f5a + f5b + f5c
 patchwork + plot_annotation(tag_levels = 'a')
-ggplot2::ggsave("figure/Fig.5 quality-cog.png", width = 18,
+ggplot2::ggsave("figure/Fig.5 ECONOMY BIG FIVE.png", width = 18,
                 height = 5, bg = "white", dpi = 600)
 
 ## fig 6 Relationship of average knapping Economy to individual a) grip strength, b) mental rotation, and c) motor accuracy. Panel a) also includes a Loess fit line (50% of points, Epanechnikov kernel) to illustrate the changing relationship at approximately 30 kg.
-f6a<-ggplot(ind_level, aes(x = Grip_Strength_kg, y = Economy_Average, color = Age.Group)) +
-  geom_point() +
-  geom_smooth(method = "lm", aes(group = 1),se = FALSE, colour="black", linewidth = 0.5)+
-  scale_color_manual(values = c("darkred", "deepskyblue")) +
-  labs(x = "Grip strength (kg) (n=46)", y = "Economy") +
+# f6a<-ggplot(ind_level, aes(x = Grip_Strength_kg, y = Economy_Average, color = Age.Group)) +
+#   geom_point() +
+#   geom_smooth(method = "lm", aes(group = 1),se = FALSE, colour="black", linewidth = 0.5)+
+#   scale_color_manual(values = c("darkred", "deepskyblue")) +
+#   labs(x = "Grip strength (kg) (n=46)", y = "Economy") +
+#   theme_minimal(base_size = 14) +
+#   theme(legend.position = "none")
+# # +   ggpubr::stat_cor(method = "pearson", label.x = 45, label.y = 1.2)
+# 
+# f6b<-ggplot(ind_level, aes(x = MRT_Percent_Correct, y = Economy_Average, color = Age.Group)) +
+#   geom_point() +
+#   geom_smooth(method = "lm", aes(group = 1),se = FALSE, colour="black", linewidth = 0.5)+
+#   scale_color_manual(values = c("darkred", "deepskyblue")) +
+#   labs(x = "Mental rotation test (%correct) (n=49)",y = NULL) +
+#   theme_minimal(base_size = 14) +
+#   theme(legend.position = "none")
+# # +  ggpubr::stat_cor(method = "pearson", label.x = 85, label.y = 1.5)
+# 
+# f6c<-ggplot(ind_level, aes(x = Fitts_movement_time_avg_ms, y = Economy_Average, color = Age.Group)) +
+#   geom_point() +
+#   geom_smooth(method = "lm", aes(group = 1),se = FALSE, colour="black", linewidth = 0.5)+
+#   scale_color_manual(values = c("darkred", "deepskyblue")) +
+#   labs(x = "Fitts test average time (ms) (n=48)", y = NULL) +
+#   theme_minimal(base_size = 14) + labs(color='Age group') 
+# # +  ggpubr::stat_cor(method = "pearson", label.x = 2200, label.y = 1.5)
+f6a<-ggplot(df_no_NA, aes(x = BFI_O, y = Quality)) +
+  geom_point(aes(color = Age.in.years)) +
+  geom_smooth(method = "lm", aes(group = 1),se = FALSE, colour="darkred", linewidth = 0.5)+
+  labs(x = "Openness", y = "Quality") +
   theme_minimal(base_size = 14) +
   theme(legend.position = "none")
 # +   ggpubr::stat_cor(method = "pearson", label.x = 45, label.y = 1.2)
 
-f6b<-ggplot(ind_level, aes(x = MRT_Percent_Correct, y = Economy_Average, color = Age.Group)) +
-  geom_point() +
-  geom_smooth(method = "lm", aes(group = 1),se = FALSE, colour="black", linewidth = 0.5)+
-  scale_color_manual(values = c("darkred", "deepskyblue")) +
-  labs(x = "Mental rotation test (%correct) (n=49)",y = NULL) +
+f6b<-ggplot(df_no_NA, aes(x = BFI_A, y = Quality)) +
+  geom_point(aes(color = Age.in.years)) +
+  geom_smooth(method = "lm", aes(group = 1),se = FALSE, colour="darkred", linewidth = 0.5)+
+  labs(x = "Agreeableness", y = "Quality") +
   theme_minimal(base_size = 14) +
   theme(legend.position = "none")
-# +  ggpubr::stat_cor(method = "pearson", label.x = 85, label.y = 1.5)
 
-f6c<-ggplot(ind_level, aes(x = Fitts_movement_time_avg_ms, y = Economy_Average, color = Age.Group)) +
-  geom_point() +
-  geom_smooth(method = "lm", aes(group = 1),se = FALSE, colour="black", linewidth = 0.5)+
-  scale_color_manual(values = c("darkred", "deepskyblue")) +
-  labs(x = "Fitts test average time (ms) (n=48)", y = NULL) +
-  theme_minimal(base_size = 14) + labs(color='Age group') 
-# +  ggpubr::stat_cor(method = "pearson", label.x = 2200, label.y = 1.5)
-
+f6c<-ggplot(df_no_NA, aes(x = BFI_N, y = Quality)) +
+  geom_point(aes(color = Age.in.years)) +
+  geom_smooth(method = "lm", aes(group = 1),se = FALSE, colour="darkred", linewidth = 0.5)+
+  labs(x = "Neuroticism", y = "Quality") +
+  theme_minimal(base_size = 14)
 patchwork <- f6a + f6b + f6c
 patchwork + plot_annotation(tag_levels = 'a')
-ggplot2::ggsave("figure/Fig.6 economy-cog.png", width = 18,
+ggplot2::ggsave("figure/Fig.6 quality big five.png", width = 18,
                 height = 5, bg = "white", dpi = 600)
 
 
 ## fig 7 Relationship of average knapping Quantity to a) Quality and b) Economy, and of c) Economy to change in Quantity over training. Note that correlations are only present in the adult sample. 
-f7a<-ggplot(ind_level, aes(x = Quality_Average, y = Quantity_Average, color = Age.Group)) +
-  geom_point() +
-  geom_smooth(data=subset(ind_level,Age.Group=="Adult"),method = "lm", se = FALSE, colour="darkred", linewidth = 0.5)+
-  scale_color_manual(values = c("darkred", "deepskyblue")) +
-  labs(x = "Quality", y = "Quantity") +
+# f7a<-ggplot(ind_level, aes(x = Quality_Average, y = Quantity_Average, color = Age.Group)) +
+#   geom_point() +
+#   geom_smooth(data=subset(ind_level,Age.Group=="Adult"),method = "lm", se = FALSE, colour="darkred", linewidth = 0.5)+
+#   scale_color_manual(values = c("darkred", "deepskyblue")) +
+#   labs(x = "Quality", y = "Quantity") +
+#   theme_minimal(base_size = 14) +
+#   theme(legend.position = "none")
+# # +   ggpubr::stat_cor(method = "pearson", label.x = 45, label.y = 1.2)
+# 
+# f7b<-ggplot(ind_level, aes(x = Economy_Average, y = Quantity_Average, color = Age.Group)) +
+#   geom_point() +
+#   geom_smooth(data=subset(ind_level,Age.Group=="Adult"),method = "lm", se = FALSE, colour="darkred", linewidth = 0.5)+
+#   scale_color_manual(values = c("darkred", "deepskyblue")) +
+#   labs(x = "Economy",y = NULL) +
+#   theme_minimal(base_size = 14) +
+#   theme(legend.position = "none")
+# # +  ggpubr::stat_cor(method = "pearson", label.x = 85, label.y = 1.5)
+# 
+# f7c<-ggplot(ind_level, aes(x = Economy_Average, y = Quantity.Change.over.Training, color = Age.Group)) +
+#   geom_point() +
+#   geom_smooth(data=subset(ind_level,Age.Group=="Adult"),method = "lm", se = FALSE, colour="darkred", linewidth = 0.5)+
+#   scale_color_manual(values = c("darkred", "deepskyblue")) +
+#   labs(x = "Economy", y = "Quantity increase over training") +
+#   theme_minimal(base_size = 14) + labs(color='Age group') 
+# # +  ggpubr::stat_cor(method = "pearson", label.x = 2200, label.y = 1.5)
+f7a<-ggplot(df_no_NA, aes(x = BFI_O, y = Quantity)) +
+  geom_point(aes(color = Age.in.years)) +
+  geom_smooth(method = "lm", aes(group = 1),se = FALSE, colour="darkred", linewidth = 0.5)+
+  labs(x = "Openness", y = "Quantity") +
   theme_minimal(base_size = 14) +
   theme(legend.position = "none")
 # +   ggpubr::stat_cor(method = "pearson", label.x = 45, label.y = 1.2)
 
-f7b<-ggplot(ind_level, aes(x = Economy_Average, y = Quantity_Average, color = Age.Group)) +
-  geom_point() +
-  geom_smooth(data=subset(ind_level,Age.Group=="Adult"),method = "lm", se = FALSE, colour="darkred", linewidth = 0.5)+
-  scale_color_manual(values = c("darkred", "deepskyblue")) +
-  labs(x = "Economy",y = NULL) +
+f7b<-ggplot(df_no_NA, aes(x = BFI_A, y = Quantity)) +
+  geom_point(aes(color = Age.in.years)) +
+  geom_smooth(method = "lm", aes(group = 1),se = FALSE, colour="darkred", linewidth = 0.5)+
+  labs(x = "Agreeableness", y = "Quantity") +
   theme_minimal(base_size = 14) +
   theme(legend.position = "none")
-# +  ggpubr::stat_cor(method = "pearson", label.x = 85, label.y = 1.5)
 
-f7c<-ggplot(ind_level, aes(x = Economy_Average, y = Quantity.Change.over.Training, color = Age.Group)) +
-  geom_point() +
-  geom_smooth(data=subset(ind_level,Age.Group=="Adult"),method = "lm", se = FALSE, colour="darkred", linewidth = 0.5)+
-  scale_color_manual(values = c("darkred", "deepskyblue")) +
-  labs(x = "Economy", y = "Quantity increase over training") +
-  theme_minimal(base_size = 14) + labs(color='Age group') 
-# +  ggpubr::stat_cor(method = "pearson", label.x = 2200, label.y = 1.5)
-
+f7c<-ggplot(df_no_NA, aes(x = BFI_N, y = Quantity)) +
+  geom_point(aes(color = Age.in.years)) +
+  geom_smooth(method = "lm", aes(group = 1),se = FALSE, colour="darkred", linewidth = 0.5)+
+  labs(x = "Neuroticism", y = "Quantity") +
+  theme_minimal(base_size = 14)
 patchwork <- f7a + f7b + f7c
 patchwork + plot_annotation(tag_levels = 'a')
-ggplot2::ggsave("figure/Fig.7 economy-quantity-quality.png", width = 18,
+ggplot2::ggsave("figure/Fig.7 Quantity big five.png", width = 18,
                 height = 5, bg = "white", dpi = 600)
