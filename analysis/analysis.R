@@ -222,6 +222,22 @@ model101 <- lmer(Quantity ~
 # View model summary
 summary(model101)
 
+model102 <- lmer(Quantity ~ 
+                   BFI_O + BFI_C + BFI_A + BFI_E + BFI_N+ BFI_O*Condition+
+                   # Individual level Random effects (nested structure)
+                   (1 | Participant_Number),
+                 
+                 data = df_no_NA)
+
+# View model summary
+summary(model102)
+
+
+
+
+
+
+
 model200 <- lmer(Quality ~ 
                    Grip_Strength_kg + 
                    MRT_Percent_Correct + Fitts_movement_time_avg_ms +
@@ -263,6 +279,97 @@ model301 <- lmer(Economy ~
 
 # View model summary
 summary(model301)
+
+
+######model selection involving conditions and interactions
+
+lmer.glmulti <- function (formula, data, random, ...) {
+  lmer(paste(deparse(formula), random), data = data)
+}
+
+quantity_big5 <- glmulti(y =Quantity ~
+                            # Level 2 (individual-level) predictors
+                            Condition+
+                            BFI_O + BFI_C + BFI_A + BFI_E + BFI_N,
+                          data = df_no_NA,
+                          random = '+(1 | Participant_Number)',
+                          level = 2,
+                          method = 'd',
+                          crit = 'aicc',
+                          marginality = TRUE,
+                          fitfunc = lmer.glmulti)
+saveRDS(quantity_big5, "data/quantity_big5.rds")
+
+quality_big5 <- glmulti(y =Quality ~
+                           # Level 2 (individual-level) predictors
+                           Condition+
+                           BFI_O + BFI_C + BFI_A + BFI_E + BFI_N,
+                         data = df_no_NA,
+                         random = '+(1 | Participant_Number)',
+                         level = 2,
+                         method = 'd',
+                         crit = 'aicc',
+                         marginality = TRUE,
+                         fitfunc = lmer.glmulti)
+saveRDS(quality_big5, "data/quality_big5.rds")
+
+
+economy_big5 <- glmulti(y =Economy ~
+                          # Level 2 (individual-level) predictors
+                          Condition+
+                          BFI_O + BFI_C + BFI_A + BFI_E + BFI_N,
+                        data = df_no_NA,
+                        random = '+(1 | Participant_Number)',
+                        level = 2,
+                        method = 'd',
+                        crit = 'aicc',
+                        marginality = TRUE,
+                        fitfunc = lmer.glmulti)
+saveRDS(economy_big5, "data/economy_big5.rds")
+
+
+quantity_cogmotor <- glmulti(y =Quantity ~
+                           # Level 2 (individual-level) predictors
+                           Condition+
+                             Grip_Strength_kg + 
+                             MRT_Percent_Correct + Fitts_movement_time_avg_ms,
+                         data = df_no_NA,
+                         random = '+(1 | Participant_Number)',
+                         level = 2,
+                         method = 'd',
+                         crit = 'aicc',
+                         marginality = TRUE,
+                         fitfunc = lmer.glmulti)
+saveRDS(quantity_cogmotor, "data/quantity_cogmotor.rds")
+
+quality_cogmotor <- glmulti(y =Quality ~
+                          # Level 2 (individual-level) predictors
+                          Condition+
+                          Grip_Strength_kg + 
+                          MRT_Percent_Correct + Fitts_movement_time_avg_ms,
+                        data = df_no_NA,
+                        random = '+(1 | Participant_Number)',
+                        level = 2,
+                        method = 'd',
+                        crit = 'aicc',
+                        marginality = TRUE,
+                        fitfunc = lmer.glmulti)
+saveRDS(quality_cogmotor, "data/quality_cogmotor.rds")
+
+
+economy_cogmotor <- glmulti(y =Economy ~
+                          # Level 2 (individual-level) predictors
+                          Condition+
+                          Grip_Strength_kg + 
+                          MRT_Percent_Correct + Fitts_movement_time_avg_ms,
+                        data = df_no_NA,
+                        random = '+(1 | Participant_Number)',
+                        level = 2,
+                        method = 'd',
+                        crit = 'aicc',
+                        marginality = TRUE,
+                        fitfunc = lmer.glmulti)
+saveRDS(economy_cogmotor, "data/economy_cogmotor.rds")
 
 # ##########children##############
 # 
