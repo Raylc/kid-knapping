@@ -294,7 +294,7 @@ quantity_big5 <- glmulti(y =Quantity ~
                           data = df_no_NA,
                           random = '+(1 | Participant_Number)',
                           level = 2,
-                          method = 'd',
+                          method = 'h',
                           crit = 'aicc',
                           marginality = TRUE,
                           fitfunc = lmer.glmulti)
@@ -307,7 +307,7 @@ quality_big5 <- glmulti(y =Quality ~
                          data = df_no_NA,
                          random = '+(1 | Participant_Number)',
                          level = 2,
-                         method = 'd',
+                         method = 'h',
                          crit = 'aicc',
                          marginality = TRUE,
                          fitfunc = lmer.glmulti)
@@ -321,12 +321,28 @@ economy_big5 <- glmulti(y =Economy ~
                         data = df_no_NA,
                         random = '+(1 | Participant_Number)',
                         level = 2,
-                        method = 'd',
+                        method = 'h',
                         crit = 'aicc',
                         marginality = TRUE,
                         fitfunc = lmer.glmulti)
 saveRDS(economy_big5, "data/economy_big5.rds")
+print(quantity_big5) #all models
+print(quality_big5) #all models
+print(economy_big5)
+summary(quantity_big5@objects[[1]]) #quantity #1 model
+summary(quantity_big5@objects[[2]]) #quantity #2 model
+summary(quantity_big5@objects[[3]]) #quantity #2 model
 
+
+summary(quality_big5@objects[[1]]) #quality #1 model
+summary(quality_big5@objects[[2]]) #quality #2 model
+summary(quality_big5@objects[[3]]) #quality #3 model
+summary(quality_big5@objects[[4]]) #quality #4 model
+
+summary(economy_big5@objects[[1]]) #economy #1 model
+summary(economy_big5@objects[[2]]) #economy #2 model
+summary(economy_big5@objects[[3]]) #economy #3 model
+# 
 
 quantity_cogmotor <- glmulti(y =Quantity ~
                            # Level 2 (individual-level) predictors
@@ -336,7 +352,7 @@ quantity_cogmotor <- glmulti(y =Quantity ~
                          data = df_no_NA,
                          random = '+(1 | Participant_Number)',
                          level = 2,
-                         method = 'd',
+                         method = 'h',
                          crit = 'aicc',
                          marginality = TRUE,
                          fitfunc = lmer.glmulti)
@@ -350,7 +366,7 @@ quality_cogmotor <- glmulti(y =Quality ~
                         data = df_no_NA,
                         random = '+(1 | Participant_Number)',
                         level = 2,
-                        method = 'd',
+                        method = 'h',
                         crit = 'aicc',
                         marginality = TRUE,
                         fitfunc = lmer.glmulti)
@@ -365,12 +381,25 @@ economy_cogmotor <- glmulti(y =Economy ~
                         data = df_no_NA,
                         random = '+(1 | Participant_Number)',
                         level = 2,
-                        method = 'd',
+                        method = 'h',
                         crit = 'aicc',
                         marginality = TRUE,
                         fitfunc = lmer.glmulti)
 saveRDS(economy_cogmotor, "data/economy_cogmotor.rds")
+print(quantity_cogmotor) #all models
+print(quality_cogmotor) #all models
+print(economy_cogmotor)
+summary(quantity_cogmotor@objects[[1]]) #quantity #1 model
+summary(quantity_cogmotor@objects[[2]]) #quantity #2 model
 
+
+summary(quality_cogmotor@objects[[1]]) #quality #1 model
+summary(quality_cogmotor@objects[[2]]) #quality #2 model
+
+
+summary(economy_cogmotor@objects[[1]]) #economy #1 model
+summary(economy_cogmotor@objects[[2]]) #economy #2 model
+# 
 # ##########children##############
 # 
 # 
