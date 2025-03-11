@@ -399,6 +399,60 @@ summary(quality_cogmotor@objects[[2]]) #quality #2 model
 
 summary(economy_cogmotor@objects[[1]]) #economy #1 model
 summary(economy_cogmotor@objects[[2]]) #economy #2 model
+
+
+##########checking relationship between three outcome variables.
+
+model000 <- lmer(Quantity ~ 
+                   Quality + Economy+
+                   # Individual level Random effects (nested structure)
+                   (1 | Participant_Number),
+                 
+                 data = df_no_NA)
+
+
+summary(model000)
+
+model0001 <- lmer(Quantity ~ 
+                   Quality + Economy+ Condition*Quality*Economy+
+                   # Individual level Random effects (nested structure)
+                   (1 | Participant_Number),
+                 
+                 data = df_no_NA)
+
+
+summary(model0001)
+
+
+model0002 <- lmer(Quantity ~ 
+                    Condition*Quality+
+                    # Individual level Random effects (nested structure)
+                    (1 | Participant_Number),
+                  
+                  data = df_no_NA)
+
+
+summary(model0002)
+
+model0003 <- lmer(Quantity ~ 
+                    Condition*Economy+
+                    # Individual level Random effects (nested structure)
+                    (1 | Participant_Number),
+                  
+                  data = df_no_NA)
+
+
+summary(model0003)
+
+model0004 <- lmer(Quantity ~ 
+                    Condition*Quality*Economy+
+                    # Individual level Random effects (nested structure)
+                    (1 | Participant_Number),
+                  
+                  data = df_no_NA)
+
+
+summary(model0004)
 # 
 # ##########children##############
 # 
