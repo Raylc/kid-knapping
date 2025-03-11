@@ -928,6 +928,84 @@ patchwork + plot_annotation(tag_levels = 'a')
 ggplot2::ggsave("figure/Fig.1 confidence interval.png", width = 18,
                 height = 5, bg = "white", dpi = 600)
 
+
+
+## new MAIN FIGURE 2##
+summary_Quantity1 <- df_no_NA %>%
+  group_by(Participant_Number) %>%
+  summarise(
+    Mean_Quantity = mean(Quantity),
+    MRT_Percent_Correct = mean(MRT_Percent_Correct),
+    Condition=first(Condition)
+  )
+summary_Quality1 <- df_no_NA %>%
+  group_by(Participant_Number) %>%
+  summarise(
+    Mean_Quality = mean(Quality),
+    Grip_Strength_kg = mean(Grip_Strength_kg),
+    Condition=first(Condition)
+  )
+f2a<-ggplot(summary_Quantity1, aes(x = MRT_Percent_Correct, y = Mean_Quantity, color = Condition)) +
+  geom_point() +
+  geom_smooth(method = "lm", aes(group = 1),se = FALSE, linewidth = 0.5)+
+  # geom_smooth(method = "loess", aes(group = 1),se = FALSE, linetype = "dotdash", linewidth = 0.5)+
+  # scale_color_manual(values = c("darkred", "deepskyblue")) +
+  labs(x = "Mental rotation test (%correct)", y = "Quantity") +
+  theme_minimal(base_size = 14) +
+  theme(legend.position = "none")
+
+
+f2b<-ggplot(summary_Quality1, aes(x = Grip_Strength_kg, y = Mean_Quality, color = Condition)) +
+  geom_point() +
+  geom_smooth(method = "lm", aes(group = 1),se = FALSE, linewidth = 0.5)+
+  # geom_smooth(method = "loess", aes(group = 1),se = FALSE, linetype = "dotdash", linewidth = 0.5)+
+  # scale_color_manual(values = c("darkred", "deepskyblue")) +
+  labs(x = "Grip strength (kg)", y = "Quality") +
+  theme_minimal(base_size = 14)
+patchwork <- f2a + f2b
+patchwork + plot_annotation(tag_levels = 'a')
+ggplot2::ggsave("figure/Fig.2 significant cog-motor.png", width = 12,
+                height = 5, bg = "white", dpi = 600)
+
+## new MAIN FIGURE 3##
+summary_Quantity2 <- df_no_NA %>%
+  group_by(Participant_Number) %>%
+  summarise(
+    Mean_Quantity = mean(Quantity),
+    BFI_A = mean(BFI_A),
+    Condition=first(Condition)
+  )
+summary_Economy2 <- df_no_NA %>%
+  group_by(Participant_Number) %>%
+  summarise(
+    Mean_Economy = mean(Economy),
+    BFI_C = mean(BFI_C),
+    Condition=first(Condition)
+  )
+f3a<-ggplot(summary_Quantity2, aes(x = BFI_A, y = Mean_Quantity, color = Condition)) +
+  geom_point() +
+  geom_smooth(method = "lm", aes(group = Condition),se = FALSE, linewidth = 0.5)+
+  # geom_smooth(method = "loess", aes(group = 1),se = FALSE, linetype = "dotdash", linewidth = 0.5)+
+  # scale_color_manual(values = c("darkred", "deepskyblue")) +
+  labs(x = "Agreeableness", y = "Quantity") +
+  theme_minimal(base_size = 14) +
+  theme(legend.position = "none")
+
+
+f3b<-ggplot(summary_Economy2, aes(x = BFI_C, y = Mean_Economy, color = Condition)) +
+  geom_point() +
+  geom_smooth(method = "lm", aes(group = 1),se = FALSE, linewidth = 0.5)+
+  # geom_smooth(method = "loess", aes(group = 1),se = FALSE, linetype = "dotdash", linewidth = 0.5)+
+  # scale_color_manual(values = c("darkred", "deepskyblue")) +
+  labs(x = "Conscientiousness ", y = "Economy") +
+  theme_minimal(base_size = 14)
+patchwork <- f3a + f3b
+patchwork + plot_annotation(tag_levels = 'a')
+ggplot2::ggsave("figure/Fig.3 significant BIG FIVE.png", width = 12,
+                height = 5, bg = "white", dpi = 600)
+
+
+
 ## MAIN FIGURE 2##
 summary_Quantity1 <- df_no_NA %>%
   group_by(Participant_Number) %>%
