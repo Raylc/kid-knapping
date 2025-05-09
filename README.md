@@ -12,7 +12,7 @@ The repository is organised into four main directories: analysis, data, and figu
 
 ### data
 * `individual__data_by_participant.csv`... This csv file documents relevant attributes, particularly motor and psychometric test results, at the individual research participant level.
-* `Table1.csv`... This csv file documents morphological and technological attributes of lithics at the core level.
+* `lithic_data_by_core.csv`... This csv file documents morphological and technological attributes of lithics at the core level.
 
 ### figure
 * `Fig1.jpg` ... This is Fig.1 in the manuscript.
